@@ -1,0 +1,1620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FarmWise Pro — Smart Farm Management</title>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="FarmWise" />
+<meta name="theme-color" content="#0F5B4E" />
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230F5B4E'/%3E%3Ctext x='50' y='68' font-size='55' text-anchor='middle'%3E%F0%9F%90%84%3C/text%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230F5B4E'/%3E%3Ctext x='50' y='68' font-size='55' text-anchor='middle'%3E%F0%9F%90%84%3C/text%3E%3C/svg%3E" />
+<style>
+  :root {
+    --sidebar: #0F5B4E;
+    --sidebar-hover: rgba(255,255,255,0.08);
+    --accent: #E8A33D;
+    --bg: #F1F4F3;
+    --card: #FFFFFF;
+    --text: #1F2937;
+    --text-muted: #6B7280;
+    --hairline: #E5E9E8;
+    --green: #059669; --green-bg: #D1FAE5;
+    --blue: #2563EB; --blue-bg: #DBEAFE;
+    --orange: #D97706; --orange-bg: #FEF3C7;
+    --red: #DC2626; --red-bg: #FEE2E2;
+    --purple: #7C3AED; --purple-bg: #EDE9FE;
+    --teal: #0D9488; --teal-bg: #CCFBF1;
+    --indigo: #4F46E5; --indigo-bg: #E0E7FF;
+    --shadow: 0 1px 3px rgba(15,91,78,0.08), 0 1px 2px rgba(15,91,78,0.06);
+    --shadow-md: 0 4px 14px rgba(15,91,78,0.10);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg); color: var(--text);
+  }
+  body.lang-ur { font-family: "Jameel Noori Nastaleeq", "Noto Nastaliq Urdu", Tahoma, "Segoe UI", -apple-system, sans-serif; }
+  #shell { display: flex; min-height: 100vh; }
+
+  /* ---------- Sidebar ---------- */
+  aside#sidebar {
+    width: 250px; background: var(--sidebar); color: #fff; flex-shrink: 0;
+    display: flex; flex-direction: column; position: fixed; top: 0; bottom: 0; left: 0; z-index: 20;
+  }
+  html[dir="rtl"] aside#sidebar { left: auto; right: 0; }
+  .brand-block { padding: 20px 20px 14px; }
+  .brand-block .brand { font-size: 17px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .brand-block .sub { font-size: 11px; opacity: 0.7; margin-top: 3px; }
+  .lang-switch { display: flex; gap: 0; margin: 14px 20px 6px; border: 1px solid rgba(255,255,255,0.25); border-radius: 8px; overflow: hidden; }
+  .lang-switch button {
+    flex: 1; background: none; border: none; color: rgba(255,255,255,0.75); padding: 7px 0; font-size: 12px;
+    cursor: pointer; font-family: inherit; font-weight: 600;
+  }
+  .lang-switch button.active { background: var(--accent); color: #1F2937; }
+  nav#navlist { padding: 6px 10px; flex: 1; overflow-y: auto; }
+  nav#navlist button {
+    width: 100%; text-align: left; background: none; border: none; color: rgba(255,255,255,0.85);
+    padding: 11px 12px; font-size: 13.5px; border-radius: 8px; margin-bottom: 2px; cursor: pointer;
+    display: flex; align-items: center; gap: 10px; font-family: inherit; border-left: 3px solid transparent;
+  }
+  html[dir="rtl"] nav#navlist button { text-align: right; border-left: none; border-right: 3px solid transparent; }
+  nav#navlist button:hover { background: var(--sidebar-hover); }
+  nav#navlist button.active { background: rgba(255,255,255,0.12); color: #fff; font-weight: 700; border-left: 3px solid var(--accent); }
+  html[dir="rtl"] nav#navlist button.active { border-left: none; border-right: 3px solid var(--accent); }
+  nav#navlist button .ic { font-size: 15px; width: 18px; text-align: center; }
+
+  /* ---------- Main ---------- */
+  main#main { margin-left: 250px; flex: 1; padding: 26px 30px 60px; max-width: 1200px; }
+  html[dir="rtl"] main#main { margin-left: 0; margin-right: 250px; }
+  .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; flex-wrap: wrap; gap: 12px; }
+  .page-header h1 { font-size: 24px; margin: 0; font-weight: 800; color: var(--text); }
+  .page-header .sub { font-size: 13px; color: var(--text-muted); margin-top: 3px; }
+  .page-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+  .abtn { padding: 9px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; border: none; font-family: inherit; }
+  .abtn.light { background: #fff; color: var(--text); border: 1px solid var(--hairline); box-shadow: var(--shadow); }
+  .abtn.danger { background: #DC2626; color: #fff; }
+
+  /* ---------- KPI cards ---------- */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 22px; }
+  .kpi-card { background: var(--card); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); }
+  .kpi-badge { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 12px; }
+  .kpi-value { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1.1; }
+  .kpi-label { font-size: 12.5px; color: var(--text-muted); margin-top: 6px; }
+  .kpi-trend { font-size: 11.5px; margin-top: 8px; font-weight: 600; }
+  .kpi-trend.up { color: var(--green); } .kpi-trend.down { color: var(--red); } .kpi-trend.flat { color: var(--text-muted); }
+
+  /* ---------- Panels ---------- */
+  .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 20px; }
+  @media (max-width: 900px) { .panel-grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--card); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); }
+  .panel h3 { font-size: 14px; margin: 0 0 14px; display: flex; align-items: center; gap: 8px; }
+  .panel .empty-chart { font-size: 12.5px; color: var(--text-muted); padding: 30px 0; text-align: center; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+  .legend .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+  html[dir="rtl"] .legend .dot { margin-right: 0; margin-left: 5px; }
+
+  /* ---------- Forms ---------- */
+  .card { background: var(--card); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); margin-bottom: 20px; }
+  h3.section { font-size: 14px; font-weight: 700; margin: 0 0 12px; }
+  .field { margin-bottom: 14px; }
+  .field label { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; padding: 10px 11px; border: 1px solid var(--hairline); border-radius: 8px;
+    font-size: 14px; color: var(--text); background: #fff; font-family: inherit;
+  }
+  html[dir="rtl"] .field input[type="number"], html[dir="rtl"] .field input[type="date"] { direction: ltr; text-align: right; }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--sidebar); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .btn {
+    width: 100%; padding: 12px 0; border: none; border-radius: 9px; font-size: 13.5px; font-weight: 700;
+    cursor: pointer; background: var(--sidebar); color: #fff; margin-bottom: 4px; font-family: inherit;
+  }
+  .btn.ghost { background: #fff; color: var(--red); border: 1px solid var(--hairline); }
+  .row { display: flex; justify-content: space-between; align-items: center; padding: 11px 0; border-bottom: 1px solid var(--hairline); }
+  .row .del { background: none; border: none; color: var(--red); font-size: 11.5px; cursor: pointer; }
+  .note { padding: 12px 14px; background: var(--orange-bg); border-left: 3px solid var(--orange); border-radius: 8px; font-size: 12px; line-height: 1.55; margin-bottom: 16px; }
+  html[dir="rtl"] .note { border-left: none; border-right: 3px solid var(--orange); }
+  .alert { padding: 11px 13px; background: var(--red-bg); border-left: 3px solid var(--red); border-radius: 8px; margin-bottom: 8px; }
+  html[dir="rtl"] .alert { border-left: none; border-right: 3px solid var(--red); }
+  .alert.good { background: var(--green-bg); border-color: var(--green); }
+  .alert.warn { background: var(--orange-bg); border-color: var(--orange); }
+  .alert.info { background: var(--indigo-bg); border-color: var(--indigo); }
+  .choice { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
+  .choice button { padding: 8px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; border: 1px solid var(--hairline); background: #fff; color: var(--text); font-family: inherit; }
+  .choice button.active { background: var(--sidebar); color: #fff; border-color: var(--sidebar); }
+  .pricing-option { display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 10px; margin-bottom: 8px; border: 1px solid var(--hairline); cursor: pointer; }
+  .pricing-option.selected { border-color: var(--sidebar); background: #EAF3F0; }
+  .tick { width: 18px; height: 18px; border-radius: 5px; flex-shrink: 0; margin-top: 1px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff; border: 2px solid var(--hairline); }
+  .tick.on { background: var(--sidebar); border-color: var(--sidebar); }
+  .pill-title { font-size: 12.5px; font-weight: 700; }
+  .pill-desc { font-size: 11.5px; color: var(--text-muted); margin-top: 2px; }
+  .muted { font-size: 12px; color: var(--text-muted); }
+  .empty { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; }
+  .divider { height: 20px; }
+
+  /* ---------- Mobile ---------- */
+  @media print {
+    aside#sidebar, .page-actions, .lang-switch, nav#navlist { display: none !important; }
+    main#main { margin: 0 !important; padding: 0 !important; max-width: 100% !important; }
+    .card, .kpi-row, .page-header .sub { box-shadow: none !important; }
+    body { background: #fff !important; }
+    #printableReport { box-shadow: none !important; border: none !important; }
+    .grid2:has(input[type="date"]) { display: none !important; }
+  }
+  @media (max-width: 860px) {
+    aside#sidebar { width: 100%; height: auto; position: sticky; top: 0; flex-direction: row; align-items: center; overflow-x: auto; padding: 0; }
+    .brand-block { padding: 12px 14px; flex-shrink: 0; }
+    .brand-block .sub { display: none; }
+    .lang-switch { margin: 0 8px; flex-shrink: 0; width: 110px; }
+    nav#navlist { display: flex; padding: 6px 8px; overflow-x: auto; flex: none; }
+    nav#navlist button { flex-direction: column; white-space: nowrap; border-left: none; border-bottom: 3px solid transparent; }
+    nav#navlist button.active { border-left: none; border-bottom: 3px solid var(--accent); }
+    main#main { margin-left: 0 !important; margin-right: 0 !important; padding: 18px 16px 50px; }
+    #shell { flex-direction: column; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div id="shell">
+  <aside id="sidebar">
+    <div class="brand-block">
+      <div class="brand" id="brandText"></div>
+      <div class="sub" id="brandSub"></div>
+    </div>
+    <div class="lang-switch">
+      <button id="langBtnEn" onclick="setLanguage('en')">English</button>
+      <button id="langBtnUr" onclick="setLanguage('ur')">اردو</button>
+    </div>
+    <nav id="navlist"></nav>
+  </aside>
+  <main id="main"></main>
+</div>
+
+<script>
+// ================= STORAGE =================
+const KEYS = {
+  bandi: "bandi-setup", rates: "rate-book", animals: "animals",
+  ledger: "milk-ledger", feedItems: "feed-items", feedUsage: "feed-usage",
+  medical: "medical-events", tests: "animal-tests", settings: "settings",
+  parties: "parties", payments: "payments", feedPurchases: "feed-purchases",
+};
+function farmStorageKey(suffix) { return `farmwise:${currentFarmId}:${suffix}`; }
+function load(suffix, fallback) { try { const v = localStorage.getItem(farmStorageKey(suffix)); return v ? JSON.parse(v) : fallback; } catch(e) { return fallback; } }
+
+const DEFAULT_BANDI = {
+  "Cow-Morning": { pricingMode: "mixed", quotaMun: 6, fixedRate: 210, commissionPct: 0 },
+  "Cow-Evening": { pricingMode: "mixed", quotaMun: 6, fixedRate: 210, commissionPct: 0 },
+  "Buffalo-Morning": { pricingMode: "mixed", quotaMun: 10, fixedRate: 260, commissionPct: 0 },
+  "Buffalo-Evening": { pricingMode: "mixed", quotaMun: 10, fixedRate: 260, commissionPct: 0 },
+};
+const DEFAULT_SETTINGS = { alertDropPct: 15, species: "both", targetCostPerLitre: 18, lowStockKg: 20, testIntervalDays: 10 };
+
+// ============================================================
+// SYNC — entirely optional. The app works fully offline without it.
+// Turning it on (from Setup → Sync) connects to a Firebase project
+// so the same data shows up on every device that connects to the
+// same project. Nothing here runs unless the user has connected it.
+// ============================================================
+let SYNC_CONFIG = JSON.parse(localStorage.getItem("farmwise:firebase-config") || "null");
+let syncConnected = false;
+let syncError = null;
+let db = null;
+let farmsSyncUnsub = null;
+let dataSyncUnsubs = [];
+
+function detachDataSyncListeners() { dataSyncUnsubs.forEach(u => { try { u(); } catch(e) {} }); dataSyncUnsubs = []; }
+function detachAllSyncListeners() { detachDataSyncListeners(); if (farmsSyncUnsub) { try { farmsSyncUnsub(); } catch(e) {} farmsSyncUnsub = null; } }
+
+function connectSync(config, { silent } = {}) {
+  try {
+    firebase.initializeApp(config);
+    db = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
+    syncConnected = true;
+    syncError = null;
+    SYNC_CONFIG = config;
+    localStorage.setItem("farmwise:firebase-config", JSON.stringify(config));
+    reconcileFarmsWithCloud();
+    if (currentFarmId) reconcileFarmDataWithCloud(currentFarmId);
+    render();
+    return true;
+  } catch (e) {
+    syncConnected = false;
+    syncError = String(e && e.message || e);
+    if (!silent) render();
+    return false;
+  }
+}
+function disconnectSync() {
+  detachAllSyncListeners();
+  syncConnected = false;
+  db = null;
+  localStorage.removeItem("farmwise:firebase-config");
+  render();
+}
+
+function reconcileFarmsWithCloud() {
+  if (!syncConnected) return;
+  const col = db.collection("farms_registry");
+  // Push any locally-created farms up to the cloud if they're not there yet
+  col.get().then(snap => {
+    const cloudIds = new Set(snap.docs.map(d => d.id));
+    const batch = db.batch();
+    let hasWrites = false;
+    FARMS.forEach(f => {
+      if (!cloudIds.has(f.id)) { batch.set(col.doc(f.id), { name: f.name, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); hasWrites = true; }
+    });
+    return hasWrites ? batch.commit() : null;
+  }).catch(e => console.error("farms reconcile push failed:", e))
+  .finally(() => {
+    if (farmsSyncUnsub) farmsSyncUnsub();
+    farmsSyncUnsub = col.onSnapshot(snap => {
+      const cloudFarms = snap.docs.map(d => ({ id: d.id, name: (d.data()||{}).name || "" }));
+      const localOnly = FARMS.filter(f => !cloudFarms.find(c => c.id === f.id));
+      FARMS = [...cloudFarms, ...localOnly];
+      localStorage.setItem("farmwise:farms", JSON.stringify(FARMS));
+      render();
+    }, e => console.error("farms listener error:", e));
+  });
+}
+
+function reconcileFarmDataWithCloud(id) {
+  if (!syncConnected) return;
+  detachDataSyncListeners();
+  Object.entries(KEYS).forEach(([field, suffix]) => {
+    const ref = db.collection("farms_registry").doc(id).collection("data").doc(suffix);
+    ref.get().then(docSnap => {
+      if (docSnap.exists) {
+        // Cloud already has data for this field — it wins on first connect.
+        const val = (docSnap.data() || {}).value;
+        if (field === "settings") S.settings = Object.assign({}, DEFAULT_SETTINGS, val || {});
+        else if (field === "bandi") S.bandi = val || DEFAULT_BANDI;
+        else S[field] = val || [];
+        localStorage.setItem(farmStorageKey(suffix), JSON.stringify(S[field]));
+        render();
+      } else {
+        // Nothing in the cloud yet for this field — upload what's local.
+        ref.set({ value: S[field], updatedAt: firebase.firestore.FieldValue.serverTimestamp() }).catch(e => console.error("initial upload failed:", suffix, e));
+      }
+    }).catch(e => console.error("reconcile get failed:", suffix, e))
+    .finally(() => {
+      const unsub = ref.onSnapshot(docSnap => {
+        if (!docSnap.exists) return;
+        const val = (docSnap.data() || {}).value;
+        if (field === "settings") S.settings = Object.assign({}, DEFAULT_SETTINGS, val || {});
+        else if (field === "bandi") S.bandi = val || DEFAULT_BANDI;
+        else S[field] = val || [];
+        localStorage.setItem(farmStorageKey(suffix), JSON.stringify(S[field]));
+        render();
+      }, e => console.error("data listener error:", suffix, e));
+      dataSyncUnsubs.push(unsub);
+    });
+  });
+}
+
+// save() always writes locally first (instant, works offline), then also
+// pushes to the cloud if sync is connected.
+function save(suffix, value) {
+  try { localStorage.setItem(farmStorageKey(suffix), JSON.stringify(value)); } catch(e) { console.error(e); }
+  if (syncConnected && currentFarmId) {
+    db.collection("farms_registry").doc(currentFarmId).collection("data").doc(suffix)
+      .set({ value, updatedAt: firebase.firestore.FieldValue.serverTimestamp() })
+      .catch(e => console.error("cloud save failed:", suffix, e));
+  }
+}
+
+// ---- Multi-farmer registry (not tied to any single farm's data) ----
+let FARMS = JSON.parse(localStorage.getItem("farmwise:farms") || "[]");
+let currentFarmId = localStorage.getItem("farmwise:last-farm") || null;
+if (currentFarmId && !FARMS.find(f => f.id === currentFarmId)) currentFarmId = null;
+
+let APP_LANG = localStorage.getItem("farmwise:app-language") || "en";
+function lang() { return APP_LANG === "ur" ? "ur" : "en"; }
+function setLanguage(l) { APP_LANG = l; localStorage.setItem("farmwise:app-language", l); render(); }
+
+let S = { bandi: DEFAULT_BANDI, rates: [], animals: [], ledger: [], feedItems: [], feedUsage: [], medical: [], tests: [],
+  parties: [], payments: [], feedPurchases: [], settings: DEFAULT_SETTINGS, tab: "dashboard" };
+let UI = { choosingKey: null };
+
+function loadFarmData() {
+  S = {
+    bandi: load(KEYS.bandi, DEFAULT_BANDI), rates: load(KEYS.rates, []), animals: load(KEYS.animals, []),
+    ledger: load(KEYS.ledger, []), feedItems: load(KEYS.feedItems, []), feedUsage: load(KEYS.feedUsage, []),
+    medical: load(KEYS.medical, []), tests: load(KEYS.tests, []),
+    parties: load(KEYS.parties, []), payments: load(KEYS.payments, []), feedPurchases: load(KEYS.feedPurchases, []),
+    settings: Object.assign({}, DEFAULT_SETTINGS, load(KEYS.settings, {})),
+    tab: "dashboard",
+  };
+}
+function openFarm(id) {
+  currentFarmId = id;
+  localStorage.setItem("farmwise:last-farm", id);
+  UI.choosingKey = null;
+  loadFarmData();
+  render();
+  if (syncConnected) reconcileFarmDataWithCloud(id);
+}
+function switchFarmer() {
+  detachDataSyncListeners();
+  currentFarmId = null;
+  render();
+}
+function addFarm() {
+  const input = document.getElementById("newFarmerName");
+  const name = input ? input.value.trim() : "";
+  if (!name) return;
+  const id = uid();
+  FARMS = [...FARMS, { id, name }];
+  localStorage.setItem("farmwise:farms", JSON.stringify(FARMS));
+  if (syncConnected) {
+    db.collection("farms_registry").doc(id).set({ name, createdAt: firebase.firestore.FieldValue.serverTimestamp() })
+      .catch(e => console.error("addFarm cloud push failed:", e));
+  }
+  openFarm(id);
+}
+function deleteFarm(id, name) {
+  if (!confirm(L().confirmDeleteFarm(name))) return;
+  Object.values(KEYS).forEach(suffix => localStorage.removeItem(`farmwise:${id}:${suffix}`));
+  FARMS = FARMS.filter(f => f.id !== id);
+  localStorage.setItem("farmwise:farms", JSON.stringify(FARMS));
+  if (currentFarmId === id) {
+    detachDataSyncListeners();
+    currentFarmId = null;
+    localStorage.removeItem("farmwise:last-farm");
+  }
+  if (syncConnected) {
+    const dataCol = db.collection("farms_registry").doc(id).collection("data");
+    dataCol.get().then(snap => {
+      const batch = db.batch();
+      snap.docs.forEach(d => batch.delete(d.ref));
+      batch.delete(db.collection("farms_registry").doc(id));
+      return batch.commit();
+    }).catch(e => console.error("deleteFarm cloud delete failed:", e));
+  }
+  render();
+}
+function farmAnimalCount(id) {
+  try { return (JSON.parse(localStorage.getItem(`farmwise:${id}:${KEYS.animals}`) || "[]")).length; }
+  catch(e) { return 0; }
+}
+
+if (currentFarmId) loadFarmData();
+if (SYNC_CONFIG) connectSync(SYNC_CONFIG, { silent: true });
+
+const uid = () => Math.random().toString(36).slice(2, 10);
+const currency = (n) => (lang()==="ur" ? Math.round(Number(n)||0).toLocaleString("en-IN")+" روپے" : "Rs " + Math.round(Number(n) || 0).toLocaleString("en-IN"));
+const esc = (s) => String(s == null ? "" : s).replace(/"/g, "&quot;");
+function allowedSpecies() {
+  if (S.settings.species === "cow") return ["Cow"];
+  if (S.settings.species === "buffalo") return ["Buffalo"];
+  return ["Cow", "Buffalo"];
+}
+function daysAgoStr(n) { const d = new Date(); d.setDate(d.getDate()-n); return d.toISOString().slice(0,10); }
+
+// ================= LANGUAGE PACKS =================
+const SPECIES_LABEL = { en: { Cow:"Cow", Buffalo:"Buffalo" }, ur: { Cow:"گائے", Buffalo:"بھینس" } };
+const SESSION_LABEL = { en: { Morning:"Morning", Evening:"Evening" }, ur: { Morning:"صبح", Evening:"شام" } };
+const STATUS_LABEL = {
+  en: { Lactating:"Lactating", Dry:"Dry", Pregnant:"Pregnant", Sick:"Sick", Sold:"Sold", Dead:"Dead" },
+  ur: { Lactating:"دودھ دینے والی", Dry:"خشک", Pregnant:"حاملہ", Sick:"بیمار", Sold:"فروخت شدہ", Dead:"مردہ" },
+};
+const STATUS_LIST = ["Lactating","Dry","Pregnant","Sick","Sold","Dead"];
+const MONTH_NAMES = {
+  en: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+  ur: ["جنوری","فروری","مارچ","اپریل","مئی","جون","جولائی","اگست","ستمبر","اکتوبر","نومبر","دسمبر"],
+};
+const PRICING_CATEGORIES = {
+  en: [
+    { value: "bandi_only", label: "Category 1 — All milk at fixed rate", desc: "All milk, morning and evening combined, is charged at the fixed rate. No open-market portion." },
+    { value: "mixed", label: "Category 2 — Fixed quota + open market for extra", desc: "A fixed quota is set for morning and evening. Anything above that quota is charged at the open-market rate, minus commission." },
+    { value: "market_only", label: "Category 3 — All milk at open market rate", desc: "All milk is charged at whatever rate is announced that session, minus commission." },
+  ],
+  ur: [
+    { value: "bandi_only", label: "کیٹیگری 1 — تمام دودھ فکسڈ ریٹ پر", desc: "صبح اور شام کا تمام دودھ ملا کر فکسڈ ریٹ پر لیا جاتا ہے۔ اوپن مارکیٹ کا کوئی حصہ نہیں۔" },
+    { value: "mixed", label: "کیٹیگری 2 — فکسڈ کوٹہ + اضافی دودھ اوپن مارکیٹ پر", desc: "صبح اور شام کے لیے ایک فکسڈ کوٹہ مقرر ہے۔ اس کوٹے سے زائد دودھ اوپن مارکیٹ ریٹ پر، کمیشن کاٹ کر، لیا جاتا ہے۔" },
+    { value: "market_only", label: "کیٹیگری 3 — تمام دودھ اوپن مارکیٹ ریٹ پر", desc: "تمام دودھ اس سیشن میں اعلان کردہ ریٹ پر، کمیشن کاٹ کر، لیا جاتا ہے۔" },
+  ],
+};
+const TAB_META = {
+  dashboard: { icon:"📊", en:{nav:"Dashboard",title:"Dashboard",sub:"Overview of your farm performance"}, ur:{nav:"ڈیش بورڈ",title:"ڈیش بورڈ",sub:"آپ کے فارم کی کارکردگی کا خلاصہ"} },
+  milk:      { icon:"🥛", en:{nav:"Milk Production",title:"Milk Production",sub:"Log daily sessions and the bandi / open-market split"}, ur:{nav:"دودھ کی پیداوار",title:"دودھ کی پیداوار",sub:"روزانہ سیشنز اور بندی / اوپن مارکیٹ تقسیم درج کریں"} },
+  feed:      { icon:"🌾", en:{nav:"Feed Costs",title:"Feed Costs",sub:"Track purchases, usage, and weighted-average cost"}, ur:{nav:"خوراک کے اخراجات",title:"خوراک کے اخراجات",sub:"خریداری، استعمال، اور ویٹڈ ایوریج لاگت کا ریکارڈ"} },
+  medical:   { icon:"🩺", en:{nav:"Medical Costs",title:"Medical Costs",sub:"Diagnoses, medicines, vet fees, and lifetime cost per animal"}, ur:{nav:"طبی اخراجات",title:"طبی اخراجات",sub:"تشخیص، ادویات، ڈاکٹر کی فیس، اور فی جانور مجموعی لاگت"} },
+  rates:     { icon:"💹", en:{nav:"Rates",title:"Rates",sub:"Open-market rates and period averages"}, ur:{nav:"ریٹس",title:"ریٹس",sub:"اوپن مارکیٹ ریٹس اور مختلف مدت کی اوسط"} },
+  animals:   { icon:"🐄", en:{nav:"Animals",title:"Animals",sub:"Manage your herd and individual milk tests"}, ur:{nav:"جانور",title:"جانور",sub:"اپنے ریوڑ اور انفرادی دودھ ٹیسٹ کا انتظام کریں"} },
+  accounts:  { icon:"💰", en:{nav:"Accounts",title:"Accounts",sub:"Money owed to you by buyers, and money you owe suppliers"}, ur:{nav:"کھاتے",title:"کھاتے",sub:"خریداروں کی طرف واجب الادا رقم، اور سپلائرز کو واجب الادا رقم"} },
+  report:    { icon:"🖨️", en:{nav:"Report",title:"Printable Report",sub:"A clean summary you can print or save as PDF"}, ur:{nav:"رپورٹ",title:"پرنٹ ایبل رپورٹ",sub:"ایک صاف خلاصہ جسے آپ پرنٹ یا PDF کے طور پر محفوظ کر سکتے ہیں"} },
+  setup:     { icon:"⚙️", en:{nav:"Setup",title:"Setup",sub:"Bandi pricing rules and alert sensitivity"}, ur:{nav:"ترتیبات",title:"ترتیبات",sub:"بندی کی قیمت کے اصول اور الرٹ کی حساسیت"} },
+};
+const TAB_ORDER = ["dashboard","milk","feed","medical","rates","animals","accounts","report","setup"];
+
+// Flat UI string table
+const STR = {
+  en: {
+    brand: "🐄 FarmWise Pro", brandSub: "Smart Management System",
+    loadDemo: "📥 Load Demo", clearAll: "🗑️ Clear All", backup: "⬇️ Backup", restore: "⬆️ Restore",
+    emptyDashNote: 'This dashboard is empty because no data has been entered yet. Click <b>Load Demo</b> above to see it fully populated with sample records, or head to Milk / Feed / Medical / Animals to start entering your real farm data.',
+    kpiTotalMilk: "Total Milk (30 Days)", kpiTotalRevenue: "Total Revenue", kpiFeedCost: "Feed Cost",
+    kpiMedicalCost: "Medical Cost", kpiNetProfit: "Net Profit", kpiCostPerLiter: "Cost Per Liter",
+    margin: "margin", target: "Target", litres: "L",
+    chartMilkTrend: "📈 Milk Production Trend", chartCostBreakdown: "🥧 Cost Breakdown",
+    chartDailyProfit: "📊 Daily Profit Trend", chartRevVsCost: "⚖️ Revenue vs Costs (last 4 weeks)",
+    legendRevenue: "Revenue", legendCosts: "Costs",
+    footerSummary: (l,m,f,a,t) => `${l} milk entries · ${m} medical events · ${f} feed logs · ${a} animals · ${t} milk tests`,
+    notEnoughData: "Not enough data yet — add a few more days.", noDataYet: "No data yet.", noCostDataYet: "No cost data yet.",
+    alertsTitle: (n) => `⚠️ Alerts (${n})`,
+    milkDown: (tag,pct) => `${tag} — milk down ${pct}%`,
+    milkUp: (tag,pct) => `${tag} — milk up ${pct}%`,
+    milkChangeDetail: (d1,l1,d2,l2,extra) => `${d1}: ${l1} L → ${d2}: ${l2} L — ${extra}`,
+    beyondThreshold: (p) => `beyond your ${p}% threshold`,
+    goodImprovement: "good improvement, worth noting what changed",
+    lowStockTitle: (name) => `Low stock — ${name}`,
+    lowStockDetail: (kg,limit) => `Only ${kg} kg left (below your ${limit} kg alert level). Time to reorder.`,
+    testDueTitle: (tag) => `Test due — ${tag}`,
+    testDueDetailWithDate: (date,days) => `Last individual test was ${date}. It's been longer than your ${days}-day schedule.`,
+    testDueDetailNone: "No individual milk test has been logged yet for this animal.",
+    confirmLoadDemo: "This will fill the app with sample data for demonstration. It won't erase anything you've already entered — it adds alongside it. Continue?",
+    confirmClearAll: "This will permanently delete ALL data in this app — milk records, rates, animals, feed, and medical history. This cannot be undone. Continue?",
+    confirmRestore: "This will replace ALL current data in the app with the contents of this backup. This cannot be undone. Continue?",
+    backupSavedMsg: "Backup saved. Keep this file somewhere safe — email it to yourself, save it to Google Drive, or copy it to another device. Use \"Restore\" with this same file to bring your records back on any copy of this app.",
+    invalidBackup: "This doesn't look like a valid FarmWise backup file.",
+    restoreSuccess: "Backup restored successfully.", restoreFail: "Could not read that file. Please try again.",
+    whatMilk: "What milk does your farm produce?", cowOnly: "Cow milk only", buffaloOnly: "Buffalo milk only", both: "Both cow and buffalo",
+    alertSensitivity: "Alert sensitivity", alertPctLabel: "Flag an animal if its milk changes (up or down) more than this % between two tests",
+    lowStockLabel: "Low feed stock alert level (kg)", testIntervalLabel: "Expected days between individual milk tests",
+    targetCostLabel: "Target cost per liter (for the dashboard KPI)",
+    bandiSetupTitle: "Bandi / pricing setup — set once, edit anytime", changeCategory: "Change category",
+    fixedRateLabel: "Fixed rate / mun", fixedQuotaLabel: "Fixed quota (mun)", commissionExtraLabel: "Commission % on the extra", commissionLabel: "Commission %",
+    addRateTitle: "Add today's announced rate", date: "Date", species: "Species", morningRate: "Morning rate / mun", eveningRate: "Evening rate / mun", saveRate: "Save rate",
+    rateLog: (n) => `Rate log (${n})`, noRatesYet: "No rates entered yet.", morningWord: "Morning", eveningWord: "Evening",
+    rateAveragesTitle: "Rate averages — morning & evening combined", noSpeciesRatesYet: (sp) => `No ${sp} rates entered yet.`,
+    avg5: "5-day averages", avg10: "10-day averages", avgMonthly: "Monthly averages (Jan–Dec)", avgYearly: "Yearly averages",
+    perMun: "/ mun", noData: "no data", notEnoughDataShort: "Not enough data yet.", days: "days",
+    addMilkSession: "Add a milk session", session: "Session", mun: "Mun", plusLitres: "+ litres", saveEntry: "Save entry",
+    ledgerTitle: (n) => `Ledger (${n} entries)`, noMilkEntries: "No milk entries yet.",
+    munTotal: (given,total) => `${given} mun total — ${total}`,
+    noRateForDay: (sp,date) => `No rate entered for ${sp} on ${date} yet — add it in Rates, or excess prices at 0 for now.`,
+    bandiLine: (qty,rate,amt) => `Bandi: ${qty} mun × ${rate} = ${amt}`, marketLine: (qty,rate,amt) => `Open market: ${qty} mun × ${rate} = ${amt}`,
+    sessionTotal: (amt) => `Session total: ${amt}`,
+    recordFeedPurchase: "Record a feed purchase", itemName: "Item name", itemPlaceholder: "Berseem, khal, wanda...",
+    categoryLabel: "Category", greenFodder: "Green fodder", dryFodder: "Dry fodder", concentrate: "Concentrate", minerals: "Minerals",
+    qtyPurchasedKg: "Quantity purchased (kg)", totalPurchaseCost: "Total purchase cost", savePurchase: "Save purchase",
+    feedInventory: (n) => `Feed inventory (${n})`, noFeedItems: "No feed items yet.",
+    stockLine: (kg,cost) => `${kg} kg in stock · avg ${cost}/kg`,
+    logUsageTitle: "Log today's usage", item: "Item", selectItem: "Select item", qtyUsedKg: "Quantity used (kg)", logUsage: "Log usage",
+    usageLog: (n) => `Usage log (${n})`, noUsageYet: "No usage logged yet.", usageLine: (kg,cost) => `${kg} kg — ${cost}`,
+    logMedicalEvent: "Log a medical event", animalTag: "Animal tag", outcome: "Outcome",
+    recovered: "Recovered", ongoing: "Ongoing", deceased: "Deceased", diagnosis: "Diagnosis", diagnosisPlaceholder: "Mastitis, left hind quarter",
+    medicinesUsed: "Medicines used", medicineName: "Medicine name", qty: "Qty", unitCost: "Unit cost", addMedicineLine: "+ Add medicine line",
+    vetFee: "Vet fee", saveMedicalEvent: "Save medical event", historyByAnimal: "History by animal", noMedicalYet: "No medical events logged yet.",
+    lifetime: (amt) => `Lifetime: ${amt}`, noMedicinesLogged: "no medicines logged",
+    addAnimalTitle: "Add an animal", tagId: "Tag / ID", breed: "Breed", status: "Status", addAnimal: "Add animal",
+    herdTitle: (n) => `Herd (${n})`, noAnimalsYet: "No animals added yet.",
+    individualTestTitle: "Individual milk test (every ~10 days, per animal)", testDate: "Test date", totalLitresDay: "Total litres that day", saveTest: "Save test",
+    testHistoryTitle: (n) => `Test history (${n})`, noTestsYet: "No tests logged yet.", delete: "Delete",
+    selectFarmerTitle: "Select a farmer", selectFarmerSub: "Choose whose records to open, or add a new one",
+    addNewFarmer: "Add new farmer", farmerNamePlaceholder: "e.g. Jawad Ahmed Dairy Farm", addFarmerBtn: "Add & Open",
+    noFarmersYet: "You haven't added any farmers yet. Add the first one below.",
+    animalsCount: (n) => `${n} animals`, openFarm: "Open", switchFarmer: "🔄 Switch Farmer",
+    confirmDeleteFarm: (name) => `This will permanently delete ALL data for "${name}" — milk records, rates, animals, feed, and medical history. This cannot be undone. Continue?`,
+    syncTitle: "☁️ Sync across devices", syncIntro: "Optional. Connect a free Firebase project to see the same data on your phone, computer, and the owner's phone. The app works fully without this.",
+    syncConnected: "✅ Connected — this farm's data syncs live across every device connected to this project.",
+    syncDisconnect: "Disconnect sync", syncConnectBtn: "Connect",
+    syncError: "Couldn't connect", syncMissingFields: "Please fill in at least apiKey and projectId.",
+    // Accounts
+    addPartyTitle: "Add a buyer or supplier", partyName: "Name", partyType: "Type", buyerType: "Milk buyer", supplierType: "Feed/medicine supplier",
+    addPartyBtn: "Add", noParties: "No buyers or suppliers added yet.",
+    recordPayment: "Record a payment", selectParty: "Select who", paymentDate: "Date", paymentAmount: "Amount",
+    receivedFromBuyer: "Received from buyer", paidToSupplier: "Paid to supplier", savePayment: "Save payment",
+    buyersTitle: "Buyers — money owed to you", suppliersTitle: "Suppliers — money you owe",
+    owesYou: (amt) => `Owes you: ${amt}`, youOwe: (amt) => `You owe: ${amt}`, settledUp: "Settled up",
+    totalOwed: "Total owed to you", totalYouOwe: "Total you owe",
+    paymentLog: "Payment log", noPaymentsYet: "No payments recorded yet.",
+    buyerFieldLabel: "Buyer (optional)", noBuyerOption: "Cash / no buyer tracked",
+    supplierFieldLabel: "Supplier (optional)", noSupplierOption: "Cash / no supplier tracked",
+    confirmDeleteParty: "Delete this party? Past records referencing them are kept, just no longer linked to a name.",
+    // Report
+    reportFrom: "From", reportTo: "To", printReport: "🖨️ Print / Save as PDF", reportFarmLabel: "Farm",
+    reportGenerated: "Generated on", reportPeriod: "Period", reportMilkIncome: "Milk Income",
+    reportFixedRate: "Fixed-rate (bandi) portion", reportOpenMarket: "Open-market portion",
+    reportFeedCost: "Feed Cost", reportMedicalCost: "Medical Cost", reportNetProfit: "Net Profit",
+    reportReceivables: "Outstanding receivables (owed to you)", reportPayables: "Outstanding payables (you owe)",
+    reportHerd: "Herd Summary", reportTotalAnimals: "Total animals", reportLactating: "Lactating", reportDry: "Dry",
+    reportPregnant: "Pregnant", reportSick: "Sick", reportFooter: "Generated by FarmWise — offline farm records",
+    // What-if pricing scenario
+    scenarioTitle: "What if all your milk (last 30 days) had been sold under one pricing plan?",
+    scenarioActual: "Actual (mixed)", scenarioAllBandi: "All at fixed rate", scenarioAllMarket: "All at open market",
+    scenarioIncome: "Milk income under this scenario", scenarioProfit: "Net profit under this scenario",
+    scenarioVsActual: (amt, isMore) => isMore ? `${amt} more than what actually happened` : `${amt} less than what actually happened`,
+    scenarioMissingRateNote: (n) => `${n} session(s) skipped in this scenario — no open-market rate was recorded for those days.`,
+  },
+  ur: {
+    brand: "🐄 فارم وائز پرو", brandSub: "سمارٹ مینجمنٹ سسٹم",
+    loadDemo: "📥 نمونہ ڈیٹا لوڈ کریں", clearAll: "🗑️ سب کچھ صاف کریں", backup: "⬇️ بیک اپ", restore: "⬆️ بحال کریں",
+    emptyDashNote: 'یہ ڈیش بورڈ اس لیے خالی ہے کیونکہ ابھی تک کوئی ڈیٹا درج نہیں کیا گیا۔ نمونہ ڈیٹا سے بھرا ہوا ڈیش بورڈ دیکھنے کے لیے اوپر <b>نمونہ ڈیٹا لوڈ کریں</b> پر کلک کریں، یا اپنے فارم کا حقیقی ریکارڈ درج کرنے کے لیے دودھ / خوراک / طبی / جانور کے سیکشن میں جائیں۔',
+    kpiTotalMilk: "کل دودھ (30 دن)", kpiTotalRevenue: "کل آمدنی", kpiFeedCost: "خوراک کی لاگت",
+    kpiMedicalCost: "طبی اخراجات", kpiNetProfit: "خالص منافع", kpiCostPerLiter: "فی لیٹر لاگت",
+    margin: "مارجن", target: "ہدف", litres: "لیٹر",
+    chartMilkTrend: "📈 دودھ کی پیداوار کا رجحان", chartCostBreakdown: "🥧 لاگت کی تقسیم",
+    chartDailyProfit: "📊 روزانہ منافع کا رجحان", chartRevVsCost: "⚖️ آمدنی بمقابلہ اخراجات (آخری 4 ہفتے)",
+    legendRevenue: "آمدنی", legendCosts: "اخراجات",
+    footerSummary: (l,m,f,a,t) => `${l} دودھ کے اندراجات · ${m} طبی واقعات · ${f} خوراک لاگز · ${a} جانور · ${t} دودھ کے ٹیسٹ`,
+    notEnoughData: "ابھی تک کافی ڈیٹا نہیں — چند مزید دن شامل کریں۔", noDataYet: "ابھی تک کوئی ڈیٹا نہیں۔", noCostDataYet: "ابھی تک لاگت کا کوئی ڈیٹا نہیں۔",
+    alertsTitle: (n) => `⚠️ انتباہات (${n})`,
+    milkDown: (tag,pct) => `${tag} — دودھ میں ${pct}% کمی`,
+    milkUp: (tag,pct) => `${tag} — دودھ میں ${pct}% اضافہ`,
+    milkChangeDetail: (d1,l1,d2,l2,extra) => `${d1}: ${l1} لیٹر ← ${d2}: ${l2} لیٹر — ${extra}`,
+    beyondThreshold: (p) => `آپ کی ${p}% حد سے زیادہ`,
+    goodImprovement: "اچھی بہتری، دیکھیں کیا تبدیل ہوا",
+    lowStockTitle: (name) => `ذخیرہ کم ہے — ${name}`,
+    lowStockDetail: (kg,limit) => `صرف ${kg} کلوگرام باقی ہے (آپ کی ${limit} کلوگرام حد سے کم)۔ دوبارہ خریداری کا وقت ہے۔`,
+    testDueTitle: (tag) => `ٹیسٹ باقی ہے — ${tag}`,
+    testDueDetailWithDate: (date,days) => `آخری انفرادی ٹیسٹ ${date} کو ہوا تھا۔ یہ آپ کے ${days} دن کے شیڈول سے زیادہ ہو چکا ہے۔`,
+    testDueDetailNone: "اس جانور کا ابھی تک کوئی انفرادی دودھ ٹیسٹ درج نہیں ہوا۔",
+    confirmLoadDemo: "اس سے ایپ میں مظاہرے کے لیے نمونہ ڈیٹا شامل ہو جائے گا۔ یہ آپ کے پہلے سے درج کردہ ڈیٹا کو نہیں مٹائے گا — بلکہ اس کے ساتھ شامل ہوگا۔ جاری رکھیں؟",
+    confirmClearAll: "اس سے اس ایپ کا تمام ڈیٹا مستقل طور پر حذف ہو جائے گا — دودھ کا ریکارڈ، ریٹس، جانور، خوراک، اور طبی تاریخ۔ اسے واپس نہیں لایا جا سکتا۔ جاری رکھیں؟",
+    confirmRestore: "اس سے ایپ کا موجودہ تمام ڈیٹا اس بیک اپ کے مواد سے تبدیل ہو جائے گا۔ اسے واپس نہیں لایا جا سکتا۔ جاری رکھیں؟",
+    backupSavedMsg: "بیک اپ محفوظ ہو گیا۔ اس فائل کو محفوظ جگہ رکھیں — اپنے آپ کو ای میل کریں، گوگل ڈرائیو میں محفوظ کریں، یا کسی اور ڈیوائس میں کاپی کریں۔ اسی فائل کے ساتھ \"بحال کریں\" استعمال کر کے آپ اپنا ریکارڈ اس ایپ کی کسی بھی کاپی میں واپس لا سکتے ہیں۔",
+    invalidBackup: "یہ ایک درست فارم وائز بیک اپ فائل نہیں لگتی۔",
+    restoreSuccess: "بیک اپ کامیابی سے بحال ہو گیا۔", restoreFail: "یہ فائل نہیں پڑھی جا سکی۔ دوبارہ کوشش کریں۔",
+    whatMilk: "آپ کا فارم کون سا دودھ پیدا کرتا ہے؟", cowOnly: "صرف گائے کا دودھ", buffaloOnly: "صرف بھینس کا دودھ", both: "گائے اور بھینس دونوں",
+    alertSensitivity: "الرٹ کی حساسیت", alertPctLabel: "اگر کسی جانور کا دودھ دو ٹیسٹوں کے درمیان اس فیصد سے زیادہ بدل جائے (بڑھے یا کم ہو) تو نشان زد کریں",
+    lowStockLabel: "خوراک کے کم ذخیرے کی الرٹ سطح (کلوگرام)", testIntervalLabel: "انفرادی دودھ ٹیسٹوں کے درمیان متوقع دن",
+    targetCostLabel: "فی لیٹر ہدف لاگت (ڈیش بورڈ کے لیے)",
+    bandiSetupTitle: "بندی / قیمت کی ترتیب — ایک بار سیٹ کریں، کبھی بھی تبدیل کریں", changeCategory: "کیٹیگری تبدیل کریں",
+    fixedRateLabel: "فکسڈ ریٹ / من", fixedQuotaLabel: "فکسڈ کوٹہ (من)", commissionExtraLabel: "اضافی دودھ پر کمیشن %", commissionLabel: "کمیشن %",
+    addRateTitle: "آج کا اعلان کردہ ریٹ شامل کریں", date: "تاریخ", species: "قسم", morningRate: "صبح کا ریٹ / من", eveningRate: "شام کا ریٹ / من", saveRate: "ریٹ محفوظ کریں",
+    rateLog: (n) => `ریٹ لاگ (${n})`, noRatesYet: "ابھی تک کوئی ریٹ درج نہیں کیا گیا۔", morningWord: "صبح", eveningWord: "شام",
+    rateAveragesTitle: "ریٹ کی اوسط — صبح اور شام ملا کر", noSpeciesRatesYet: (sp) => `ابھی تک ${sp} کا کوئی ریٹ درج نہیں کیا گیا۔`,
+    avg5: "5 دن کی اوسط", avg10: "10 دن کی اوسط", avgMonthly: "ماہانہ اوسط (جنوری تا دسمبر)", avgYearly: "سالانہ اوسط",
+    perMun: "/ من", noData: "کوئی ڈیٹا نہیں", notEnoughDataShort: "ابھی تک کافی ڈیٹا نہیں۔", days: "دن",
+    addMilkSession: "دودھ کا سیشن شامل کریں", session: "سیشن", mun: "من", plusLitres: "+ لیٹر", saveEntry: "اندراج محفوظ کریں",
+    ledgerTitle: (n) => `لیجر (${n} اندراجات)`, noMilkEntries: "ابھی تک دودھ کا کوئی اندراج نہیں۔",
+    munTotal: (given,total) => `${given} من کل — ${total}`,
+    noRateForDay: (sp,date) => `${sp} کے لیے ${date} کو کوئی ریٹ درج نہیں ہوا — ریٹس میں شامل کریں، ورنہ فی الحال اضافی دودھ کی قیمت صفر ہوگی۔`,
+    bandiLine: (qty,rate,amt) => `بندی: ${qty} من × ${rate} = ${amt}`, marketLine: (qty,rate,amt) => `اوپن مارکیٹ: ${qty} من × ${rate} = ${amt}`,
+    sessionTotal: (amt) => `سیشن کل: ${amt}`,
+    recordFeedPurchase: "خوراک کی خریداری درج کریں", itemName: "آئٹم کا نام", itemPlaceholder: "برسیم، کھل، ونڈا...",
+    categoryLabel: "قسم", greenFodder: "ہری چارہ", dryFodder: "خشک چارہ", concentrate: "کنسنٹریٹ", minerals: "معدنیات",
+    qtyPurchasedKg: "خریدی گئی مقدار (کلوگرام)", totalPurchaseCost: "کل خریداری لاگت", savePurchase: "خریداری محفوظ کریں",
+    feedInventory: (n) => `خوراک کا ذخیرہ (${n})`, noFeedItems: "ابھی تک کوئی خوراک آئٹم نہیں۔",
+    stockLine: (kg,cost) => `${kg} کلوگرام ذخیرہ میں · اوسط ${cost} فی کلو`,
+    logUsageTitle: "آج کا استعمال درج کریں", item: "آئٹم", selectItem: "آئٹم منتخب کریں", qtyUsedKg: "استعمال شدہ مقدار (کلوگرام)", logUsage: "استعمال درج کریں",
+    usageLog: (n) => `استعمال کا لاگ (${n})`, noUsageYet: "ابھی تک کوئی استعمال درج نہیں۔", usageLine: (kg,cost) => `${kg} کلوگرام — ${cost}`,
+    logMedicalEvent: "طبی واقعہ درج کریں", animalTag: "جانور کا ٹیگ", outcome: "نتیجہ",
+    recovered: "صحت یاب", ongoing: "جاری", deceased: "وفات", diagnosis: "تشخیص", diagnosisPlaceholder: "تھنوں کی سوزش، بائیں پچھلا حصہ",
+    medicinesUsed: "استعمال شدہ ادویات", medicineName: "دوا کا نام", qty: "مقدار", unitCost: "فی یونٹ قیمت", addMedicineLine: "+ دوا شامل کریں",
+    vetFee: "ڈاکٹر کی فیس", saveMedicalEvent: "طبی واقعہ محفوظ کریں", historyByAnimal: "جانور کے مطابق تاریخ", noMedicalYet: "ابھی تک کوئی طبی واقعہ درج نہیں۔",
+    lifetime: (amt) => `مجموعی لاگت: ${amt}`, noMedicinesLogged: "کوئی دوا درج نہیں",
+    addAnimalTitle: "جانور شامل کریں", tagId: "ٹیگ / شناخت", breed: "نسل", status: "حالت", addAnimal: "جانور شامل کریں",
+    herdTitle: (n) => `ریوڑ (${n})`, noAnimalsYet: "ابھی تک کوئی جانور شامل نہیں کیا گیا۔",
+    individualTestTitle: "انفرادی دودھ ٹیسٹ (ہر تقریباً 10 دن بعد، فی جانور)", testDate: "ٹیسٹ کی تاریخ", totalLitresDay: "اس دن کی کل لیٹر", saveTest: "ٹیسٹ محفوظ کریں",
+    testHistoryTitle: (n) => `ٹیسٹ کی تاریخ (${n})`, noTestsYet: "ابھی تک کوئی ٹیسٹ درج نہیں۔", delete: "حذف کریں",
+    selectFarmerTitle: "کسان منتخب کریں", selectFarmerSub: "دیکھنے کے لیے ریکارڈ منتخب کریں، یا نیا کسان شامل کریں",
+    addNewFarmer: "نیا کسان شامل کریں", farmerNamePlaceholder: "مثلاً جواد احمد ڈیری فارم", addFarmerBtn: "شامل کریں اور کھولیں",
+    noFarmersYet: "ابھی تک آپ نے کوئی کسان شامل نہیں کیا۔ نیچے پہلا کسان شامل کریں۔",
+    animalsCount: (n) => `${n} جانور`, openFarm: "کھولیں", switchFarmer: "🔄 کسان تبدیل کریں",
+    confirmDeleteFarm: (name) => `اس سے "${name}" کا تمام ڈیٹا مستقل طور پر حذف ہو جائے گا — دودھ کا ریکارڈ، ریٹس، جانور، خوراک، اور طبی تاریخ۔ اسے واپس نہیں لایا جا سکتا۔ جاری رکھیں؟`,
+    syncTitle: "☁️ ڈیوائسز کے درمیان ہم آہنگی", syncIntro: "اختیاری۔ ایک مفت Firebase پراجیکٹ جوڑیں تاکہ وہی ڈیٹا آپ کے فون، کمپیوٹر، اور مالک کے فون پر نظر آئے۔ اس کے بغیر بھی ایپ مکمل طور پر کام کرتی ہے۔",
+    syncConnected: "✅ منسلک ہے — اس فارم کا ڈیٹا اس پراجیکٹ سے جڑی ہر ڈیوائس پر زندہ ہم آہنگ ہوتا ہے۔",
+    syncDisconnect: "ہم آہنگی منقطع کریں", syncConnectBtn: "منسلک کریں",
+    syncError: "منسلک نہیں ہو سکا", syncMissingFields: "براہ کرم کم از کم apiKey اور projectId درج کریں۔",
+    // Accounts
+    addPartyTitle: "خریدار یا سپلائر شامل کریں", partyName: "نام", partyType: "قسم", buyerType: "دودھ خریدار", supplierType: "خوراک/دوا سپلائر",
+    addPartyBtn: "شامل کریں", noParties: "ابھی تک کوئی خریدار یا سپلائر شامل نہیں کیا گیا۔",
+    recordPayment: "ادائیگی درج کریں", selectParty: "کون منتخب کریں", paymentDate: "تاریخ", paymentAmount: "رقم",
+    receivedFromBuyer: "خریدار سے وصول ہوا", paidToSupplier: "سپلائر کو ادا کیا", savePayment: "ادائیگی محفوظ کریں",
+    buyersTitle: "خریدار — آپ کو ملنے والی رقم", suppliersTitle: "سپلائرز — آپ کی طرف واجب الادا رقم",
+    owesYou: (amt) => `آپ کو ملنا ہے: ${amt}`, youOwe: (amt) => `آپ کو دینا ہے: ${amt}`, settledUp: "حساب برابر",
+    totalOwed: "آپ کو کل ملنی والی رقم", totalYouOwe: "آپ کی کل واجب الادا رقم",
+    paymentLog: "ادائیگیوں کا لاگ", noPaymentsYet: "ابھی تک کوئی ادائیگی درج نہیں ہوئی۔",
+    buyerFieldLabel: "خریدار (اختیاری)", noBuyerOption: "نقد / کوئی خریدار نہیں",
+    supplierFieldLabel: "سپلائر (اختیاری)", noSupplierOption: "نقد / کوئی سپلائر نہیں",
+    confirmDeleteParty: "اس فریق کو حذف کریں؟ ماضی کے ریکارڈ محفوظ رہیں گے، بس کسی نام سے منسلک نہیں رہیں گے۔",
+    // Report
+    reportFrom: "سے", reportTo: "تک", printReport: "🖨️ پرنٹ / PDF کے طور پر محفوظ کریں", reportFarmLabel: "فارم",
+    reportGenerated: "تیار کردہ", reportPeriod: "مدت", reportMilkIncome: "دودھ کی آمدنی",
+    reportFixedRate: "فکسڈ ریٹ (بندی) حصہ", reportOpenMarket: "اوپن مارکیٹ حصہ",
+    reportFeedCost: "خوراک کی لاگت", reportMedicalCost: "طبی اخراجات", reportNetProfit: "خالص منافع",
+    reportReceivables: "باقی وصولی (آپ کو ملنی ہے)", reportPayables: "باقی ادائیگی (آپ نے دینی ہے)",
+    reportHerd: "ریوڑ کا خلاصہ", reportTotalAnimals: "کل جانور", reportLactating: "دودھ دینے والی", reportDry: "خشک",
+    reportPregnant: "حاملہ", reportSick: "بیمار", reportFooter: "فارم وائز کے ذریعے تیار کردہ — آف لائن فارم ریکارڈ",
+    // What-if pricing scenario
+    scenarioTitle: "اگر آپ کا تمام دودھ (آخری 30 دن کا) صرف ایک ہی قیمت کے طریقے پر بکتا؟",
+    scenarioActual: "حقیقی (ملا جلا)", scenarioAllBandi: "سب فکسڈ ریٹ پر", scenarioAllMarket: "سب اوپن مارکیٹ پر",
+    scenarioIncome: "اس صورت میں دودھ کی آمدنی", scenarioProfit: "اس صورت میں خالص منافع",
+    scenarioVsActual: (amt, isMore) => isMore ? `حقیقی آمدنی سے ${amt} زیادہ` : `حقیقی آمدنی سے ${amt} کم`,
+    scenarioMissingRateNote: (n) => `اس منظرنامے میں ${n} سیشن شامل نہیں کیے گئے — ان دنوں کا اوپن مارکیٹ ریٹ درج نہیں تھا۔`,
+  },
+};
+function L() { return STR[lang()]; }
+
+// ================= PRICING LOGIC =================
+function computeSplit(cfg, mun, extra, marketRate) {
+  const given = (Number(mun) || 0) + (Number(extra) || 0) / 40;
+  const rate = marketRate || 0;
+  let bandiQty, bandiAmount, excessQty, excessAmount;
+  if (cfg.pricingMode === "bandi_only") { bandiQty = given; bandiAmount = given*cfg.fixedRate; excessQty = 0; excessAmount = 0; }
+  else if (cfg.pricingMode === "market_only") { bandiQty = 0; bandiAmount = 0; excessQty = given; excessAmount = given*rate*(1-cfg.commissionPct/100); }
+  else { bandiQty = Math.min(given, cfg.quotaMun); bandiAmount = bandiQty*cfg.fixedRate; excessQty = Math.max(given-cfg.quotaMun,0); excessAmount = excessQty*rate*(1-cfg.commissionPct/100); }
+  return { given, bandiQty, bandiAmount, excessQty, excessAmount, total: bandiAmount + excessAmount };
+}
+function combinedDaily(sortedRates) { return sortedRates.map(r => ({ date: r.date, avg: (r.morning + r.evening) / 2 })); }
+function chunkAverage(dailyCombined, size) {
+  const out = [];
+  for (let i=0;i<dailyCombined.length;i+=size) {
+    const slice = dailyCombined.slice(i,i+size);
+    out.push({ label: slice.length>1 ? slice[0].date+" \u2192 "+slice[slice.length-1].date : slice[0].date,
+      avg: slice.reduce((s,r)=>s+r.avg,0)/slice.length, count: slice.length });
+  }
+  return out;
+}
+function monthlyAverages(dailyCombined) {
+  const byMonth = {};
+  dailyCombined.forEach(r=>{ const m=new Date(r.date).getMonth(); (byMonth[m]=byMonth[m]||[]).push(r); });
+  return MONTH_NAMES[lang()].map((name,i)=>{ const e=byMonth[i]; if(!e||!e.length) return {name,hasData:false};
+    return {name,hasData:true,count:e.length,avg:e.reduce((s,r)=>s+r.avg,0)/e.length}; });
+}
+function yearlyAverages(dailyCombined) {
+  const byYear = {};
+  dailyCombined.forEach(r=>{ const y=new Date(r.date).getFullYear(); (byYear[y]=byYear[y]||[]).push(r); });
+  return Object.keys(byYear).sort().map(y => ({ year: y, avg: byYear[y].reduce((s,r)=>s+r.avg,0)/byYear[y].length, count: byYear[y].length }));
+}
+
+// ================= NAV =================
+function renderNav() {
+  if (!currentFarmId) {
+    document.getElementById("navlist").innerHTML = "";
+  } else {
+    const farm = FARMS.find(f => f.id === currentFarmId);
+    const navHtml = TAB_ORDER.map(key => {
+      const m = TAB_META[key];
+      return `<button class="${S.tab===key?'active':''}" onclick="setTab('${key}')"><span class="ic">${m.icon}</span>${m[lang()].nav}</button>`;
+    }).join("");
+    document.getElementById("navlist").innerHTML =
+      `<div style="padding:8px 12px 4px;color:rgba(255,255,255,0.55);font-size:10.5px;text-transform:uppercase;letter-spacing:0.4px;">${farm ? esc(farm.name) : ""}</div>
+       <button onclick="switchFarmer()" style="width:100%;text-align:${lang()==='ur'?'right':'left'};background:rgba(255,255,255,0.08);border:none;color:#fff;padding:9px 12px;font-size:12.5px;border-radius:8px;margin:2px 0 10px;cursor:pointer;font-family:inherit;">${L().switchFarmer}</button>`
+      + navHtml;
+  }
+  document.getElementById("brandText").textContent = L().brand;
+  document.getElementById("brandSub").textContent = L().brandSub;
+  document.getElementById("langBtnEn").classList.toggle("active", lang()==="en");
+  document.getElementById("langBtnUr").classList.toggle("active", lang()==="ur");
+  document.documentElement.dir = lang()==="ur" ? "rtl" : "ltr";
+  document.documentElement.lang = lang()==="ur" ? "ur" : "en";
+  document.body.classList.toggle("lang-ur", lang()==="ur");
+}
+function setTab(t) { S.tab = t; UI.choosingKey = null; render(); }
+function pageHeader(actionsHtml) {
+  const m = TAB_META[S.tab][lang()];
+  return `<div class="page-header">
+    <div><h1>${m.title}</h1><div class="sub">${m.sub}</div></div>
+    <div class="page-actions">${actionsHtml || ""}</div>
+  </div>`;
+}
+
+// ================= FARM SELECTOR =================
+function renderFarmSelect() {
+  const T = L();
+  return `
+    <div class="page-header"><div><h1>${T.selectFarmerTitle}</h1><div class="sub">${T.selectFarmerSub}</div></div></div>
+    ${FARMS.length===0 ? `<div class="note">${T.noFarmersYet}</div>` : FARMS.map(f => `
+      <div class="card" style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:15px;font-weight:700;">🧑‍🌾 ${esc(f.name)}</div>
+          <div class="muted" style="margin-top:3px;">${T.animalsCount(farmAnimalCount(f.id))}</div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="abtn light" onclick="openFarm('${f.id}')">${T.openFarm}</button>
+          <button class="abtn danger" onclick="deleteFarm('${f.id}', '${esc(f.name).replace(/'/g, "\\'")}')">${T.delete}</button>
+        </div>
+      </div>
+    `).join("")}
+    <div class="card">
+      <h3 class="section">${T.addNewFarmer}</h3>
+      <div class="field"><input id="newFarmerName" placeholder="${T.farmerNamePlaceholder}"></div>
+      <button class="btn" onclick="addFarm()">${T.addFarmerBtn}</button>
+    </div>
+  `;
+}
+
+// ================= RENDER DISPATCH =================
+function render() {
+  renderNav();
+  const m = document.getElementById("main");
+  if (!currentFarmId) { m.innerHTML = renderFarmSelect(); return; }
+  if (S.tab === "dashboard") m.innerHTML = pageHeader(`<button class="abtn light" onclick="backupData()">${L().backup}</button><button class="abtn light" onclick="document.getElementById('restoreFile').click()">${L().restore}</button><input type="file" id="restoreFile" accept=".json" style="display:none;" onchange="restoreData(this.files[0])"><button class="abtn light" onclick="loadDemoData()">${L().loadDemo}</button><button class="abtn danger" onclick="clearAllData()">${L().clearAll}</button>`) + renderDashboard();
+  else if (S.tab === "rates") m.innerHTML = pageHeader() + renderRates();
+  else if (S.tab === "milk") m.innerHTML = pageHeader() + renderMilk();
+  else if (S.tab === "feed") m.innerHTML = pageHeader() + renderFeed();
+  else if (S.tab === "medical") m.innerHTML = pageHeader() + renderMedical();
+  else if (S.tab === "animals") m.innerHTML = pageHeader() + renderAnimals();
+  else if (S.tab === "accounts") m.innerHTML = pageHeader() + renderAccounts();
+  else if (S.tab === "report") m.innerHTML = pageHeader(`<button class="abtn light" onclick="window.print()">${L().printReport}</button>`) + renderReport();
+  else if (S.tab === "setup") m.innerHTML = pageHeader() + renderSetup();
+}
+
+// ================= CHART HELPERS =================
+function lineChart(points, color, w, h) {
+  w = w||520; h = h||160;
+  if (points.length < 2) return `<div class="empty-chart">${L().notEnoughData}</div>`;
+  const pad = 8;
+  const max = Math.max(...points.map(p=>p.v), 1), min = Math.min(...points.map(p=>p.v), 0);
+  const step = (w-pad*2)/(points.length-1);
+  const pts = points.map((p,i)=>{ const x=pad+i*step; const y=h-pad-((p.v-min)/((max-min)||1))*(h-pad*2); return x+","+y; }).join(" ");
+  const area = pts + ` ${pad+(points.length-1)*step},${h-pad} ${pad},${h-pad}`;
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px;">
+    <polyline points="${area}" fill="${color}" opacity="0.15" />
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" />
+  </svg>`;
+}
+function barChart(points, color, w, h) {
+  w = w||520; h = h||160;
+  if (points.length === 0) return `<div class="empty-chart">${L().noDataYet}</div>`;
+  const pad = 8, gap = 4;
+  const max = Math.max(...points.map(p=>Math.abs(p.v)), 1);
+  const zero = h/2;
+  const bw = (w - pad*2)/points.length - gap;
+  const bars = points.map((p,i)=>{
+    const x = pad + i*((w-pad*2)/points.length);
+    const bh = (Math.abs(p.v)/max) * (h/2 - pad);
+    const y = p.v >= 0 ? zero - bh : zero;
+    const fill = p.v >= 0 ? color : "#DC2626";
+    return `<rect x="${x}" y="${y}" width="${bw}" height="${Math.max(bh,1)}" fill="${fill}" rx="2"/>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px;">
+    <line x1="${pad}" y1="${zero}" x2="${w-pad}" y2="${zero}" stroke="#E5E9E8" stroke-width="1"/>
+    ${bars}
+  </svg>`;
+}
+function groupedBarChart(points, colorA, colorB, w, h) {
+  w = w||520; h = h||160;
+  if (points.length === 0) return `<div class="empty-chart">${L().noDataYet}</div>`;
+  const pad = 8;
+  const max = Math.max(...points.map(p=>Math.max(p.a,p.b)), 1);
+  const groupW = (w - pad*2)/points.length;
+  const barW = groupW*0.32;
+  const bars = points.map((p,i)=>{
+    const gx = pad + i*groupW;
+    const ah = (p.a/max)*(h-pad*2), bh = (p.b/max)*(h-pad*2);
+    return `<rect x="${gx+groupW*0.12}" y="${h-pad-ah}" width="${barW}" height="${ah}" fill="${colorA}" rx="2"/>
+            <rect x="${gx+groupW*0.52}" y="${h-pad-bh}" width="${barW}" height="${bh}" fill="${colorB}" rx="2"/>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:${h}px;">${bars}</svg>`;
+}
+function pieChart(slices) {
+  const total = slices.reduce((s,x)=>s+x.value,0);
+  if (total <= 0) return `<div class="empty-chart">${L().noCostDataYet}</div>`;
+  let acc = 0;
+  const stops = slices.map(sl => { const start = acc/total*360; acc += sl.value; const end = acc/total*360; return `${sl.color} ${start}deg ${end}deg`; }).join(", ");
+  const legend = slices.map(sl => `<span><span class="dot" style="background:${sl.color};"></span>${sl.label} — ${currency(sl.value)}</span>`).join("");
+  return `<div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap;">
+    <div style="width:120px;height:120px;border-radius:50%;background:conic-gradient(${stops});flex-shrink:0;"></div>
+    <div class="legend" style="flex-direction:column;gap:8px;">${legend}</div>
+  </div>`;
+}
+
+// ================= DASHBOARD =================
+function pctTrend(cur, prev, invert) {
+  if (!prev) return { txt: "--%", cls: "flat" };
+  const pct = ((cur - prev) / prev) * 100;
+  const good = invert ? pct < 0 : pct > 0;
+  const arrow = pct >= 0 ? "↑" : "↓";
+  return { txt: `${arrow} ${Math.abs(pct).toFixed(0)}%`, cls: good ? "up" : "down" };
+}
+function renderDashboard() {
+  const T = L();
+  const start = daysAgoStr(30), prevStart = daysAgoStr(60);
+  const inRange = (d, from, to) => d >= from && (!to || d < to);
+
+  const ledgerCur = S.ledger.filter(l=>inRange(l.date, start));
+  const ledgerPrev = S.ledger.filter(l=>inRange(l.date, prevStart, start));
+  const feedCur = S.feedUsage.filter(u=>inRange(u.date, start));
+  const feedPrev = S.feedUsage.filter(u=>inRange(u.date, prevStart, start));
+  const medCur = S.medical.filter(e=>inRange(e.date, start));
+  const medPrev = S.medical.filter(e=>inRange(e.date, prevStart, start));
+  const medCost = e => e.vetFee + e.medicines.reduce((s,m)=>s+m.qty*m.unitCost,0);
+
+  const milkLCur = ledgerCur.reduce((s,l)=>s+l.given*40,0);
+  const milkLPrev = ledgerPrev.reduce((s,l)=>s+l.given*40,0);
+  const revCur = ledgerCur.reduce((s,l)=>s+l.total,0);
+  const revPrev = ledgerPrev.reduce((s,l)=>s+l.total,0);
+  const feedCostCur = feedCur.reduce((s,u)=>s+u.cost,0);
+  const feedCostPrev = feedPrev.reduce((s,u)=>s+u.cost,0);
+  const medCostCur = medCur.reduce((s,e)=>s+medCost(e),0);
+  const medCostPrev = medPrev.reduce((s,e)=>s+medCost(e),0);
+  const netCur = revCur - feedCostCur - medCostCur;
+  const marginCur = revCur > 0 ? (netCur/revCur*100) : null;
+  const costPerLCur = milkLCur > 0 ? (feedCostCur+medCostCur)/milkLCur : 0;
+
+  const milkTrend = pctTrend(milkLCur, milkLPrev, false);
+  const revTrend = pctTrend(revCur, revPrev, false);
+  const feedTrend = pctTrend(feedCostCur, feedCostPrev, true);
+  const medTrend = pctTrend(medCostCur, medCostPrev, true);
+
+  const milkByDate = {};
+  ledgerCur.forEach(l=>{ milkByDate[l.date] = (milkByDate[l.date]||0) + l.given*40; });
+  const milkPoints = Object.keys(milkByDate).sort().map(d=>({ label:d, v: milkByDate[d] }));
+
+  const feedByDate = {}; feedCur.forEach(u=>{ feedByDate[u.date]=(feedByDate[u.date]||0)+u.cost; });
+  const medByDate = {}; medCur.forEach(e=>{ medByDate[e.date]=(medByDate[e.date]||0)+medCost(e); });
+  const revByDate = {}; ledgerCur.forEach(l=>{ revByDate[l.date]=(revByDate[l.date]||0)+l.total; });
+  const allDates = [...new Set([...Object.keys(revByDate), ...Object.keys(feedByDate), ...Object.keys(medByDate)])].sort();
+  const profitPoints = allDates.map(d => ({ label:d, v: (revByDate[d]||0) - (feedByDate[d]||0) - (medByDate[d]||0) }));
+
+  const weekBuckets = [];
+  for (let w=3; w>=0; w--) {
+    const wStart = daysAgoStr((w+1)*7), wEnd = daysAgoStr(w*7);
+    const rev = S.ledger.filter(l=>inRange(l.date, wStart, wEnd)).reduce((s,l)=>s+l.total,0);
+    const cost = S.feedUsage.filter(u=>inRange(u.date, wStart, wEnd)).reduce((s,u)=>s+u.cost,0)
+      + S.medical.filter(e=>inRange(e.date, wStart, wEnd)).reduce((s,e)=>s+medCost(e),0);
+    weekBuckets.push({ label: `W${4-w}`, a: rev, b: cost });
+  }
+
+  const kpi = (badgeClass, icon, value, label, trend) => `
+    <div class="kpi-card">
+      <div class="kpi-badge" style="background:var(--${badgeClass}-bg);color:var(--${badgeClass});">${icon}</div>
+      <div class="kpi-value">${value}</div>
+      <div class="kpi-label">${label}</div>
+      <div class="kpi-trend ${trend.cls}">${trend.txt}</div>
+    </div>`;
+
+  const totalReceivableDash = S.parties.filter(p=>p.type==="buyer").reduce((s,p)=>s+Math.max(partyBalance(p),0),0);
+  const totalPayableDash = S.parties.filter(p=>p.type==="supplier").reduce((s,p)=>s+Math.max(partyBalance(p),0),0);
+
+  // ---- What-if pricing scenario: same milk quantities, priced entirely at bandi vs entirely at open market ----
+  let bandiAllTotal = 0, marketAllTotal = 0, missingRateCount = 0;
+  ledgerCur.forEach(l => {
+    const cfg = S.bandi[`${l.species}-${l.session}`];
+    bandiAllTotal += l.given * cfg.fixedRate;
+    if (l.marketRateUsed != null) {
+      marketAllTotal += l.given * l.marketRateUsed * (1 - cfg.commissionPct / 100);
+    } else {
+      missingRateCount++;
+    }
+  });
+  const scenario = window._pricingScenario || "actual";
+  const scenarioIncome = scenario === "bandi_all" ? bandiAllTotal : scenario === "market_all" ? marketAllTotal : revCur;
+  const scenarioProfit = scenarioIncome - feedCostCur - medCostCur;
+  const scenarioDelta = scenarioIncome - revCur;
+
+  return `
+    <div class="kpi-row">
+      ${kpi("blue","🥛", milkLCur.toFixed(0)+" "+T.litres, T.kpiTotalMilk, milkTrend)}
+      ${kpi("green","Rs", currency(revCur), T.kpiTotalRevenue, revTrend)}
+      ${kpi("orange","🌾", currency(feedCostCur), T.kpiFeedCost, feedTrend)}
+      ${kpi("red","🩺", currency(medCostCur), T.kpiMedicalCost, medTrend)}
+      ${kpi("purple","💳", currency(netCur), T.kpiNetProfit, { txt: marginCur==null?`--% ${T.margin}`:`${marginCur.toFixed(0)}% ${T.margin}`, cls:"flat" })}
+      ${kpi("teal","💧", currency(costPerLCur), T.kpiCostPerLiter, { txt:`${T.target}: ${currency(S.settings.targetCostPerLitre)}`, cls:"flat" })}
+      ${kpi("green","💰", currency(totalReceivableDash), T.totalOwed, { txt:"", cls:"flat" })}
+      ${kpi("red","📤", currency(totalPayableDash), T.totalYouOwe, { txt:"", cls:"flat" })}
+    </div>
+
+    ${(S.animals.length===0 && S.ledger.length===0) ? `<div class="note">${T.emptyDashNote}</div>` : ""}
+
+    <h3 class="section">${T.scenarioTitle}</h3>
+    <div class="choice">
+      <button class="${scenario==='actual'?'active':''}" onclick="window._pricingScenario='actual';render();">${T.scenarioActual}</button>
+      <button class="${scenario==='bandi_all'?'active':''}" onclick="window._pricingScenario='bandi_all';render();">${T.scenarioAllBandi}</button>
+      <button class="${scenario==='market_all'?'active':''}" onclick="window._pricingScenario='market_all';render();">${T.scenarioAllMarket}</button>
+    </div>
+    <div class="panel" style="margin-bottom:20px;">
+      <div class="kpi-row" style="grid-template-columns:1fr 1fr;margin-bottom:${scenario!=='actual'?'10px':'0'};">
+        <div><div class="muted">${T.scenarioIncome}</div><div style="font-size:22px;font-weight:800;">${currency(scenarioIncome)}</div></div>
+        <div><div class="muted">${T.scenarioProfit}</div><div style="font-size:22px;font-weight:800;color:var(--sidebar);">${currency(scenarioProfit)}</div></div>
+      </div>
+      ${scenario!=='actual' ? `<div class="muted" style="font-size:12.5px;color:${scenarioDelta>=0?'var(--green)':'var(--red)'};font-weight:600;">${T.scenarioVsActual(currency(Math.abs(scenarioDelta)), scenarioDelta>=0)}</div>` : ""}
+      ${scenario==='market_all' && missingRateCount>0 ? `<div class="muted" style="margin-top:8px;">${T.scenarioMissingRateNote(missingRateCount)}</div>` : ""}
+    </div>
+
+    ${renderAlerts()}
+
+    <div class="panel-grid">
+      <div class="panel"><h3>${T.chartMilkTrend}</h3>${lineChart(milkPoints.map(p=>({v:p.v})), "#2563EB")}</div>
+      <div class="panel"><h3>${T.chartCostBreakdown}</h3>${pieChart([{label:T.kpiFeedCost, value:feedCostCur, color:"#D97706"},{label:T.kpiMedicalCost, value:medCostCur, color:"#DC2626"}])}</div>
+    </div>
+    <div class="panel-grid">
+      <div class="panel"><h3>${T.chartDailyProfit}</h3>${barChart(profitPoints.map(p=>({v:p.v})), "#059669")}</div>
+      <div class="panel"><h3>${T.chartRevVsCost}</h3>${groupedBarChart(weekBuckets, "#059669", "#DC2626")}
+        <div class="legend"><span><span class="dot" style="background:#059669;"></span>${T.legendRevenue}</span><span><span class="dot" style="background:#DC2626;"></span>${T.legendCosts}</span></div>
+      </div>
+    </div>
+    <div class="muted">${T.footerSummary(S.ledger.length, S.medical.length, S.feedUsage.length, S.animals.length, S.tests.length)}</div>
+  `;
+}
+function renderAlerts() {
+  const T = L();
+  const cards = [];
+  const byTag = {}; S.tests.forEach(t=>{ (byTag[t.tag]=byTag[t.tag]||[]).push(t); });
+  Object.entries(byTag).forEach(([tag,arr])=>{
+    const sorted=[...arr].sort((a,b)=>a.date>b.date?1:-1);
+    if (sorted.length<2) return;
+    const prev=sorted[sorted.length-2], last=sorted[sorted.length-1];
+    const pct=((last.litres-prev.litres)/prev.litres)*100;
+    if (pct <= -S.settings.alertDropPct) {
+      cards.push({ cls:"", icon:"🔻", title:T.milkDown(esc(tag), Math.abs(pct).toFixed(0)),
+        detail:T.milkChangeDetail(prev.date,prev.litres,last.date,last.litres,T.beyondThreshold(S.settings.alertDropPct)) });
+    } else if (pct >= S.settings.alertDropPct) {
+      cards.push({ cls:"good", icon:"📈", title:T.milkUp(esc(tag), pct.toFixed(0)),
+        detail:T.milkChangeDetail(prev.date,prev.litres,last.date,last.litres,T.goodImprovement) });
+    }
+  });
+  S.feedItems.forEach(f=>{
+    if (f.stockKg < S.settings.lowStockKg) {
+      cards.push({ cls:"warn", icon:"🌾", title:T.lowStockTitle(esc(f.name)), detail:T.lowStockDetail(f.stockKg.toFixed(1), S.settings.lowStockKg) });
+    }
+  });
+  const lastTestByTag = {};
+  S.tests.forEach(t=>{ if (!lastTestByTag[t.tag] || t.date > lastTestByTag[t.tag]) lastTestByTag[t.tag] = t.date; });
+  const overdueLimit = daysAgoStr(Math.round(S.settings.testIntervalDays * 1.5));
+  S.animals.filter(a=>a.status==="Lactating").forEach(a=>{
+    const last = lastTestByTag[a.tag];
+    if (!last || last < overdueLimit) {
+      cards.push({ cls:"info", icon:"🗓️", title:T.testDueTitle(esc(a.tag)),
+        detail: last ? T.testDueDetailWithDate(last, S.settings.testIntervalDays) : T.testDueDetailNone });
+    }
+  });
+  if (!cards.length) return "";
+  return `<h3 class="section">${T.alertsTitle(cards.length)}</h3>` + cards.map(c=>`
+    <div class="alert ${c.cls}">
+      <div style="font-size:12.5px;font-weight:700;">${c.icon} ${c.title}</div>
+      <div style="font-size:11.5px;color:var(--text-muted);margin-top:2px;">${c.detail}</div>
+    </div>`).join("") + `<div class="divider"></div>`;
+}
+
+// ================= BACKUP / RESTORE / DEMO =================
+function backupData() {
+  const payload = { _farmwise_backup:true, createdAt:new Date().toISOString(), bandi:S.bandi, rates:S.rates, animals:S.animals,
+    ledger:S.ledger, feedItems:S.feedItems, feedUsage:S.feedUsage, medical:S.medical, tests:S.tests,
+    parties:S.parties, payments:S.payments, feedPurchases:S.feedPurchases, settings:S.settings };
+  const blob = new Blob([JSON.stringify(payload,null,2)], { type:"application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `farmwise-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  alert(L().backupSavedMsg);
+}
+function restoreData(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let data;
+    try { data = JSON.parse(reader.result); } catch(e) { alert(L().invalidBackup); return; }
+    if (!data || !data._farmwise_backup) { alert(L().invalidBackup); return; }
+    if (!confirm(L().confirmRestore)) return;
+    S.bandi = data.bandi || DEFAULT_BANDI; S.rates = data.rates || []; S.animals = data.animals || [];
+    S.ledger = data.ledger || []; S.feedItems = data.feedItems || []; S.feedUsage = data.feedUsage || [];
+    S.medical = data.medical || []; S.tests = data.tests || [];
+    S.parties = data.parties || []; S.payments = data.payments || []; S.feedPurchases = data.feedPurchases || [];
+    S.settings = Object.assign({}, DEFAULT_SETTINGS, data.settings || {});
+    save(KEYS.bandi,S.bandi); save(KEYS.rates,S.rates); save(KEYS.animals,S.animals); save(KEYS.ledger,S.ledger);
+    save(KEYS.feedItems,S.feedItems); save(KEYS.feedUsage,S.feedUsage); save(KEYS.medical,S.medical);
+    save(KEYS.tests,S.tests); save(KEYS.parties,S.parties); save(KEYS.payments,S.payments); save(KEYS.feedPurchases,S.feedPurchases);
+    save(KEYS.settings,S.settings);
+    alert(L().restoreSuccess); render();
+  };
+  reader.onerror = () => alert(L().restoreFail);
+  reader.readAsText(file);
+}
+function loadDemoData() {
+  if (!confirm(L().confirmLoadDemo)) return;
+  const today = new Date();
+  const dateStr = (offset) => { const d = new Date(today); d.setDate(d.getDate()-offset); return d.toISOString().slice(0,10); };
+  let m = { Cow:245, Buffalo:278 }, e = { Cow:250, Buffalo:282 };
+  for (let i=30;i>=0;i--) {
+    const d = dateStr(i);
+    ["Cow","Buffalo"].forEach(sp=>{
+      m[sp] += Math.round((Math.random()-0.4)*3); e[sp] += Math.round((Math.random()-0.4)*3);
+      S.rates = S.rates.filter(r=>!(r.date===d && r.species===sp));
+      S.rates.push({ id:uid(), date:d, species:sp, morning:m[sp], evening:e[sp] });
+    });
+  }
+  for (let i=30;i>=0;i--) {
+    const d = dateStr(i);
+    ["Cow","Buffalo"].forEach(sp=>{
+      ["Morning","Evening"].forEach(ses=>{
+        const cfg = S.bandi[`${sp}-${ses}`];
+        const rateRow = S.rates.find(r=>r.date===d && r.species===sp);
+        const marketRate = rateRow ? (ses==="Morning"?rateRow.morning:rateRow.evening) : null;
+        const baseMun = sp==="Buffalo" ? 10 : 6;
+        const mun = baseMun + Math.round((Math.random()-0.3)*2);
+        const extra = Math.round(Math.random()*30);
+        const r = computeSplit(cfg, mun, extra, marketRate);
+        S.ledger.push({ id:uid(), date:d, species:sp, session:ses, mun, extraLitres:extra, ...r, marketRateUsed:marketRate });
+      });
+    });
+  }
+  const demoAnimals = [
+    { tag:"AE-014", species:"Buffalo", breed:"Nili-Ravi", status:"Lactating" },
+    { tag:"AE-027", species:"Cow", breed:"Sahiwal", status:"Lactating" },
+    { tag:"AE-003", species:"Buffalo", breed:"Nili-Ravi", status:"Lactating" },
+    { tag:"AE-041", species:"Cow", breed:"Sahiwal", status:"Dry" },
+    { tag:"AE-019", species:"Buffalo", breed:"Nili-Ravi", status:"Sick" },
+    { tag:"AE-032", species:"Cow", breed:"Sahiwal", status:"Lactating" },
+  ];
+  demoAnimals.forEach(a=>{ if (!S.animals.find(x=>x.tag===a.tag)) S.animals.push({ id:uid(), ...a }); });
+  const demoFeed = [
+    { name:"Berseem (green fodder)", category:"Green fodder", stockKg:480, avgCost:8.5 },
+    { name:"Wheat straw (turi)", category:"Dry fodder", stockKg:350, avgCost:12.0 },
+    { name:"Cottonseed cake (khal)", category:"Concentrate", stockKg:156, avgCost:62.0 },
+    { name:"Wanda feed mix", category:"Concentrate", stockKg:81, avgCost:78.0 },
+  ];
+  demoFeed.forEach(f=>{ if (!S.feedItems.find(x=>x.name===f.name)) S.feedItems.push({ id:uid(), ...f }); });
+  for (let i=30;i>=0;i--) {
+    const d = dateStr(i);
+    demoFeed.forEach(f=>{
+      const qty = f.category==="Green fodder" ? 130+Math.round(Math.random()*20) : f.category==="Dry fodder" ? 55+Math.round(Math.random()*10) : 20+Math.round(Math.random()*8);
+      S.feedUsage.push({ id:uid(), date:d, itemName:f.name, qty, cost:qty*f.avgCost });
+    });
+  }
+  S.medical.push(
+    { id:uid(), animalTag:"AE-019", date:dateStr(28), diagnosis:"Mastitis (left hind quarter)", medicines:[{name:"Amoxicillin injection",qty:3,unitCost:420},{name:"Anti-inflammatory",qty:2,unitCost:260}], vetFee:800, outcome:"Recovered" },
+    { id:uid(), animalTag:"AE-019", date:dateStr(14), diagnosis:"Mastitis relapse, same quarter", medicines:[{name:"Amoxicillin injection",qty:5,unitCost:420},{name:"Anti-inflammatory",qty:3,unitCost:260}], vetFee:800, outcome:"Recovered" },
+    { id:uid(), animalTag:"AE-019", date:dateStr(2), diagnosis:"Mastitis, third episode — chronic", medicines:[{name:"Amoxicillin injection",qty:6,unitCost:420},{name:"Anti-inflammatory",qty:4,unitCost:260}], vetFee:1200, outcome:"Ongoing" }
+  );
+  S.tests.push(
+    { id:uid(), tag:"AE-014", date:dateStr(10), litres:24.6 }, { id:uid(), tag:"AE-014", date:dateStr(0), litres:26.2 },
+    { id:uid(), tag:"AE-019", date:dateStr(10), litres:14.2 }, { id:uid(), tag:"AE-019", date:dateStr(0), litres:9.4 },
+    { id:uid(), tag:"AE-032", date:dateStr(10), litres:24.0 }, { id:uid(), tag:"AE-032", date:dateStr(0), litres:25.6 }
+  );
+  save(KEYS.rates,S.rates); save(KEYS.ledger,S.ledger); save(KEYS.animals,S.animals);
+  save(KEYS.feedItems,S.feedItems); save(KEYS.feedUsage,S.feedUsage); save(KEYS.medical,S.medical); save(KEYS.tests,S.tests);
+  render();
+}
+function clearAllData() {
+  if (!confirm(L().confirmClearAll)) return;
+  Object.values(KEYS).forEach(k => localStorage.removeItem(farmStorageKey(k)));
+  S = { bandi: DEFAULT_BANDI, rates: [], animals: [], ledger: [], feedItems: [], feedUsage: [], medical: [], tests: [],
+    parties: [], payments: [], feedPurchases: [], settings: Object.assign({}, DEFAULT_SETTINGS), tab: "dashboard" };
+  render();
+}
+
+// ================= SETUP =================
+function renderSetup() {
+  const T = L();
+  const speciesOpts = [["cow",T.cowOnly],["buffalo",T.buffaloOnly],["both",T.both]];
+  const allowed = allowedSpecies();
+  const visibleKeys = Object.keys(S.bandi).filter(k => allowed.includes(k.split("-")[0]));
+  const keyLabel = (key) => { const [sp,ses] = key.split("-"); return `${SPECIES_LABEL[lang()][sp]} · ${SESSION_LABEL[lang()][ses]}`; };
+
+  const pricingBlock = (key) => {
+    const cfg = S.bandi[key];
+    const cats = PRICING_CATEGORIES[lang()];
+    if (UI.choosingKey !== key) {
+      const sel = cats.find(c=>c.value===cfg.pricingMode);
+      let fields = "";
+      if (cfg.pricingMode === "bandi_only") fields = `<div class="field"><label>${T.fixedRateLabel}</label><input type="number" value="${cfg.fixedRate}" onchange="updateBandi('${key}','fixedRate',this.value)"></div>`;
+      else if (cfg.pricingMode === "mixed") fields = `<div class="grid2"><div class="field"><label>${T.fixedQuotaLabel}</label><input type="number" value="${cfg.quotaMun}" onchange="updateBandi('${key}','quotaMun',this.value)"></div><div class="field"><label>${T.fixedRateLabel}</label><input type="number" value="${cfg.fixedRate}" onchange="updateBandi('${key}','fixedRate',this.value)"></div></div><div class="field"><label>${T.commissionExtraLabel}</label><input type="number" value="${cfg.commissionPct}" onchange="updateBandi('${key}','commissionPct',this.value)"></div>`;
+      else fields = `<div class="field"><label>${T.commissionLabel}</label><input type="number" value="${cfg.commissionPct}" onchange="updateBandi('${key}','commissionPct',this.value)"></div>`;
+      return `<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+          <div style="font-size:13px;font-weight:700;">${keyLabel(key)}</div>
+          <button onclick="UI.choosingKey='${key}';render();" style="background:none;border:none;color:var(--sidebar);font-size:12px;cursor:pointer;text-decoration:underline;">${T.changeCategory}</button>
+        </div>
+        <div class="pricing-option selected"><div class="tick on">✓</div><div><div class="pill-title">${sel.label}</div><div class="pill-desc">${sel.desc}</div></div></div>
+        ${fields}</div>`;
+    }
+    return `<div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:10px;">${keyLabel(key)}</div>
+      ${cats.map(cat => `<div class="pricing-option ${cfg.pricingMode===cat.value?'selected':''}" onclick="updateBandi('${key}','pricingMode','${cat.value}');UI.choosingKey=null;render();">
+          <div class="tick ${cfg.pricingMode===cat.value?'on':''}">${cfg.pricingMode===cat.value?'✓':''}</div>
+          <div><div class="pill-title">${cat.label}</div><div class="pill-desc">${cat.desc}</div></div></div>`).join("")}</div>`;
+  };
+
+  const syncCard = syncConnected ? `
+    <div class="card">
+      <h3 class="section">${T.syncTitle}</h3>
+      <div class="note" style="background:var(--green-bg);border-left-color:var(--green);">${T.syncConnected}</div>
+      <button class="btn ghost" onclick="disconnectSync()">${T.syncDisconnect}</button>
+    </div>` : `
+    <div class="card">
+      <h3 class="section">${T.syncTitle}</h3>
+      <div class="muted" style="margin-bottom:14px;">${T.syncIntro}</div>
+      ${syncError ? `<div class="note" style="background:var(--red-bg);border-left-color:var(--red);">${T.syncError}: ${esc(syncError)}</div>` : ""}
+      <div class="field"><label>apiKey</label><input id="syncApiKey" placeholder="AIzaSy..."></div>
+      <div class="field"><label>authDomain</label><input id="syncAuthDomain" placeholder="project.firebaseapp.com"></div>
+      <div class="field"><label>projectId</label><input id="syncProjectId" placeholder="project-id"></div>
+      <div class="field"><label>storageBucket</label><input id="syncStorageBucket" placeholder="project.appspot.com"></div>
+      <div class="field"><label>messagingSenderId</label><input id="syncSenderId" placeholder="123456789012"></div>
+      <div class="field"><label>appId</label><input id="syncAppId" placeholder="1:123456789012:web:abcdef"></div>
+      <button class="btn" onclick="connectSyncFromForm()">${T.syncConnectBtn}</button>
+    </div>`;
+
+  return `
+    ${syncCard}
+    <div class="card">
+      <h3 class="section">${T.whatMilk}</h3>
+      <div class="choice">${speciesOpts.map(([v,l]) => `<button class="${S.settings.species===v?'active':''}" onclick="updateSetting('species','${v}')">${l}</button>`).join("")}</div>
+      <h3 class="section">${T.alertSensitivity}</h3>
+      <div class="field"><label>${T.alertPctLabel}</label>
+        <input type="number" value="${S.settings.alertDropPct}" onchange="updateSetting('alertDropPct', Number(this.value))"></div>
+      <div class="grid2">
+        <div class="field"><label>${T.lowStockLabel}</label>
+          <input type="number" value="${S.settings.lowStockKg}" onchange="updateSetting('lowStockKg', Number(this.value))"></div>
+        <div class="field"><label>${T.testIntervalLabel}</label>
+          <input type="number" value="${S.settings.testIntervalDays}" onchange="updateSetting('testIntervalDays', Number(this.value))"></div>
+      </div>
+      <div class="field"><label>${T.targetCostLabel}</label>
+        <input type="number" value="${S.settings.targetCostPerLitre}" onchange="updateSetting('targetCostPerLitre', Number(this.value))"></div>
+    </div>
+    <h3 class="section">${T.bandiSetupTitle}</h3>
+    ${visibleKeys.map(pricingBlock).join("")}
+  `;
+}
+function updateBandi(key, field, value) { if (field!=="pricingMode") value=Number(value); S.bandi={...S.bandi,[key]:{...S.bandi[key],[field]:value}}; save(KEYS.bandi,S.bandi); render(); }
+function updateSetting(field, value) { S.settings={...S.settings,[field]:value}; save(KEYS.settings,S.settings); render(); }
+function connectSyncFromForm() {
+  const v = id => (document.getElementById(id) || {}).value || "";
+  const config = {
+    apiKey: v("syncApiKey").trim(), authDomain: v("syncAuthDomain").trim(), projectId: v("syncProjectId").trim(),
+    storageBucket: v("syncStorageBucket").trim(), messagingSenderId: v("syncSenderId").trim(), appId: v("syncAppId").trim(),
+  };
+  if (!config.apiKey || !config.projectId) { syncError = L().syncMissingFields; render(); return; }
+  connectSync(config);
+}
+
+// ================= RATES =================
+function renderRates() {
+  const T = L();
+  const allowed = allowedSpecies();
+  const viewSpecies = window._viewSpecies && allowed.includes(window._viewSpecies) ? window._viewSpecies : allowed[0];
+  const speciesRates = S.rates.filter(r=>r.species===viewSpecies).sort((a,b)=>a.date>b.date?1:-1);
+  const daily = combinedDaily(speciesRates);
+  const b5 = chunkAverage(daily,5), b10 = chunkAverage(daily,10), months = monthlyAverages(daily), years = yearlyAverages(daily);
+  return `
+    <div class="card">
+      <h3 class="section">${T.addRateTitle}</h3>
+      <div class="grid2">
+        <div class="field"><label>${T.date}</label><input type="date" id="rateDate"></div>
+        ${allowed.length>1 ? `<div class="field"><label>${T.species}</label><select id="rateSpecies">${allowed.map(s=>`<option value="${s}">${SPECIES_LABEL[lang()][s]}</option>`).join("")}</select></div>` : `<input type="hidden" id="rateSpecies" value="${allowed[0]}">`}
+      </div>
+      <div class="grid2">
+        <div class="field"><label>${T.morningRate}</label><input type="number" id="rateMorning"></div>
+        <div class="field"><label>${T.eveningRate}</label><input type="number" id="rateEvening"></div>
+      </div>
+      <button class="btn" onclick="addRate()">${T.saveRate}</button>
+    </div>
+    <div class="card">
+      <h3 class="section">${T.rateLog(S.rates.length)}</h3>
+      ${S.rates.length===0 ? `<div class="empty">${T.noRatesYet}</div>` : S.rates.map(r=>`<div class="row"><div><div style="font-size:13px;">${r.date} · ${SPECIES_LABEL[lang()][r.species]}</div><div style="font-size:11.5px;color:var(--text-muted);">${T.morningWord} ${r.morning} · ${T.eveningWord} ${r.evening}</div></div><button class="del" onclick="delRate('${r.id}')">${T.delete}</button></div>`).join("")}
+    </div>
+    <div class="card">
+      <h3 class="section">${T.rateAveragesTitle}</h3>
+      ${allowed.length>1 ? `<div class="choice">${allowed.map(s=>`<button class="${viewSpecies===s?'active':''}" onclick="window._viewSpecies='${s}';render();">${SPECIES_LABEL[lang()][s]}</button>`).join("")}</div>` : ""}
+      ${speciesRates.length===0 ? `<div class="empty">${T.noSpeciesRatesYet(SPECIES_LABEL[lang()][viewSpecies])}</div>` : `
+        <div style="font-size:12px;font-weight:700;margin-bottom:6px;">${T.avg5}</div>
+        <div style="margin-bottom:18px;">${b5.map(b=>`<div class="row" style="padding:6px 0;"><span class="muted">${b.label} (${b.count})</span><span>${b.avg.toFixed(1)} ${T.perMun}</span></div>`).join("")}</div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:6px;">${T.avg10}</div>
+        <div style="margin-bottom:18px;">${b10.map(b=>`<div class="row" style="padding:6px 0;"><span class="muted">${b.label} (${b.count})</span><span>${b.avg.toFixed(1)} ${T.perMun}</span></div>`).join("")}</div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:6px;">${T.avgMonthly}</div>
+        <div style="margin-bottom:18px;">${months.map(mo=>`<div class="row" style="padding:6px 0;"><span class="muted">${mo.name}</span><span style="${mo.hasData?'':'color:#CBD5D1;'}">${mo.hasData?`${mo.avg.toFixed(1)} ${T.perMun} (${mo.count})`:T.noData}</span></div>`).join("")}</div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:6px;">${T.avgYearly}</div>
+        <div>${years.length===0 ? `<div class="empty">${T.notEnoughDataShort}</div>` : years.map(y=>`<div class="row" style="padding:6px 0;"><span class="muted">${y.year}</span><span>${y.avg.toFixed(1)} ${T.perMun} (${y.count} ${T.days})</span></div>`).join("")}</div>
+      `}
+    </div>
+  `;
+}
+function addRate() {
+  const date=document.getElementById("rateDate").value, species=document.getElementById("rateSpecies").value;
+  const morning=document.getElementById("rateMorning").value, evening=document.getElementById("rateEvening").value;
+  if (!date||!morning||!evening) return;
+  S.rates=[...S.rates.filter(r=>!(r.date===date&&r.species===species)),{id:uid(),date,species,morning:Number(morning),evening:Number(evening)}].sort((a,b)=>a.date<b.date?1:-1);
+  save(KEYS.rates,S.rates); render();
+}
+function delRate(id) { S.rates=S.rates.filter(r=>r.id!==id); save(KEYS.rates,S.rates); render(); }
+
+// ================= MILK =================
+function renderMilk() {
+  const T = L();
+  const allowed = allowedSpecies();
+  const species = window._milkSpecies && allowed.includes(window._milkSpecies) ? window._milkSpecies : allowed[0];
+  const session = window._milkSession || "Morning";
+  const buyers = S.parties.filter(p => p.type === "buyer");
+  return `
+    <div class="card">
+      <h3 class="section">${T.addMilkSession}</h3>
+      <div class="grid2">
+        <div class="field"><label>${T.date}</label><input type="date" id="milkDate"></div>
+        <div class="field"><label>${T.session}</label><select id="milkSession" onchange="window._milkSession=this.value;render();">
+          <option value="Morning" ${session==="Morning"?"selected":""}>${SESSION_LABEL[lang()].Morning}</option><option value="Evening" ${session==="Evening"?"selected":""}>${SESSION_LABEL[lang()].Evening}</option></select></div>
+      </div>
+      ${allowed.length>1 ? `<div class="field"><label>${T.species}</label><select id="milkSpecies" onchange="window._milkSpecies=this.value;render();">${allowed.map(s=>`<option value="${s}" ${species===s?"selected":""}>${SPECIES_LABEL[lang()][s]}</option>`).join("")}</select></div>` : ""}
+      <div class="grid2">
+        <div class="field"><label>${T.mun}</label><input type="number" id="milkMun" oninput="previewMilk()"></div>
+        <div class="field"><label>${T.plusLitres}</label><input type="number" id="milkExtra" oninput="previewMilk()"></div>
+      </div>
+      <div class="field"><label>${T.buyerFieldLabel}</label><select id="milkBuyer">
+        <option value="">${T.noBuyerOption}</option>${buyers.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join("")}
+      </select></div>
+      <div id="milkPreview"></div>
+      <button class="btn" onclick="addMilk()">${T.saveEntry}</button>
+    </div>
+    <div class="card">
+      <h3 class="section">${T.ledgerTitle(S.ledger.length)}</h3>
+      ${S.ledger.length===0 ? `<div class="empty">${T.noMilkEntries}</div>` : S.ledger.slice(0,60).map(l=>`<div class="row"><div><div style="font-size:13px;">${l.date} · ${SPECIES_LABEL[lang()][l.species]} · ${SESSION_LABEL[lang()][l.session]}${l.buyerId ? ` · ${esc((S.parties.find(p=>p.id===l.buyerId)||{}).name||"")}` : ""}</div><div style="font-size:11.5px;color:var(--text-muted);">${T.munTotal(l.given.toFixed(2), currency(l.total))}</div></div><button class="del" onclick="delMilk('${l.id}')">${T.delete}</button></div>`).join("")}
+    </div>
+  `;
+}
+function previewMilk() {
+  const T = L();
+  const allowed = allowedSpecies();
+  const species = window._milkSpecies && allowed.includes(window._milkSpecies) ? window._milkSpecies : allowed[0];
+  const session = window._milkSession || "Morning";
+  const date=document.getElementById("milkDate").value, mun=document.getElementById("milkMun").value, extra=document.getElementById("milkExtra").value;
+  const cfg = S.bandi[`${species}-${session}`];
+  const rateRow = S.rates.find(r=>r.date===date && r.species===species);
+  const marketRate = rateRow ? (session==="Morning"?rateRow.morning:rateRow.evening) : null;
+  const box = document.getElementById("milkPreview");
+  if (!mun && !extra) { box.innerHTML=""; return; }
+  const r = computeSplit(cfg, mun, extra, marketRate);
+  let html = `<div class="note">`;
+  if (!rateRow && date) html += `<div style="color:var(--red);margin-bottom:6px;">${T.noRateForDay(SPECIES_LABEL[lang()][species], date)}</div>`;
+  if (r.bandiQty>0) html += `<div>${T.bandiLine(r.bandiQty.toFixed(2), cfg.fixedRate, currency(r.bandiAmount))}</div>`;
+  if (r.excessQty>0) html += `<div>${T.marketLine(r.excessQty.toFixed(2), marketRate||0, currency(r.excessAmount))}</div>`;
+  html += `<div style="font-weight:700;color:var(--sidebar);">${T.sessionTotal(currency(r.total))}</div></div>`;
+  box.innerHTML = html;
+}
+function addMilk() {
+  const allowed = allowedSpecies();
+  const species = window._milkSpecies && allowed.includes(window._milkSpecies) ? window._milkSpecies : allowed[0];
+  const session = window._milkSession || "Morning";
+  const date=document.getElementById("milkDate").value, mun=document.getElementById("milkMun").value, extra=document.getElementById("milkExtra").value;
+  const buyerId = document.getElementById("milkBuyer").value || null;
+  const cfg = S.bandi[`${species}-${session}`];
+  if (!date || !cfg) return;
+  const rateRow = S.rates.find(r=>r.date===date && r.species===species);
+  const marketRate = rateRow ? (session==="Morning"?rateRow.morning:rateRow.evening) : null;
+  const r = computeSplit(cfg, mun, extra, marketRate);
+  S.ledger = [{ id:uid(), date, species, session, mun:Number(mun)||0, extraLitres:Number(extra)||0, buyerId, ...r, marketRateUsed:marketRate }, ...S.ledger];
+  save(KEYS.ledger, S.ledger); render();
+}
+function delMilk(id) { S.ledger=S.ledger.filter(l=>l.id!==id); save(KEYS.ledger,S.ledger); render(); }
+
+// ================= FEED =================
+function renderFeed() {
+  const T = L();
+  const suppliers = S.parties.filter(p => p.type === "supplier");
+  return `
+    <div class="card">
+      <h3 class="section">${T.recordFeedPurchase}</h3>
+      <div class="grid2">
+        <div class="field"><label>${T.date}</label><input type="date" id="feedPurchDate"></div>
+        <div class="field"><label>${T.itemName}</label><input id="feedName" list="feedNames" placeholder="${T.itemPlaceholder}">
+          <datalist id="feedNames">${S.feedItems.map(f=>`<option value="${esc(f.name)}">`).join("")}</datalist></div>
+      </div>
+      <div class="field"><label>${T.categoryLabel}</label><select id="feedCategory"><option>${T.greenFodder}</option><option>${T.dryFodder}</option><option>${T.concentrate}</option><option>${T.minerals}</option></select></div>
+      <div class="grid2">
+        <div class="field"><label>${T.qtyPurchasedKg}</label><input type="number" id="feedPurchQty"></div>
+        <div class="field"><label>${T.totalPurchaseCost}</label><input type="number" id="feedPurchCost"></div>
+      </div>
+      <div class="field"><label>${T.supplierFieldLabel}</label><select id="feedPurchSupplier">
+        <option value="">${T.noSupplierOption}</option>${suppliers.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("")}
+      </select></div>
+      <button class="btn" onclick="addFeedPurchase()">${T.savePurchase}</button>
+    </div>
+    <div class="card">
+      <h3 class="section">${T.feedInventory(S.feedItems.length)}</h3>
+      ${S.feedItems.length===0 ? `<div class="empty">${T.noFeedItems}</div>` : S.feedItems.map(f=>`<div class="row"><div><div style="font-size:13px;">${esc(f.name)} <span class="muted">· ${esc(f.category)}</span></div><div style="font-size:11.5px;color:var(--text-muted);">${T.stockLine(f.stockKg.toFixed(1), f.avgCost.toFixed(2))}</div></div><button class="del" onclick="delFeedItem('${f.id}')">${T.delete}</button></div>`).join("")}
+    </div>
+    <div class="card">
+      <h3 class="section">${T.logUsageTitle}</h3>
+      <div class="grid2">
+        <div class="field"><label>${T.date}</label><input type="date" id="useDate"></div>
+        <div class="field"><label>${T.item}</label><select id="useItem"><option value="">${T.selectItem}</option>${S.feedItems.map(f=>`<option value="${f.id}">${esc(f.name)}</option>`).join("")}</select></div>
+      </div>
+      <div class="field"><label>${T.qtyUsedKg}</label><input type="number" id="useQty"></div>
+      <button class="btn" onclick="logFeedUsage()">${T.logUsage}</button>
+    </div>
+    <div class="card">
+      <h3 class="section">${T.usageLog(S.feedUsage.length)}</h3>
+      ${S.feedUsage.length===0 ? `<div class="empty">${T.noUsageYet}</div>` : S.feedUsage.slice(0,60).map(u=>`<div class="row"><div><div style="font-size:13px;">${u.date} · ${esc(u.itemName)}</div><div style="font-size:11.5px;color:var(--text-muted);">${T.usageLine(u.qty, currency(u.cost))}</div></div><button class="del" onclick="delFeedUsage('${u.id}')">${T.delete}</button></div>`).join("")}
+    </div>
+  `;
+}
+function addFeedPurchase() {
+  const date=document.getElementById("feedPurchDate").value || daysAgoStr(0);
+  const name=document.getElementById("feedName").value, category=document.getElementById("feedCategory").value;
+  const qty=Number(document.getElementById("feedPurchQty").value), cost=Number(document.getElementById("feedPurchCost").value);
+  const supplierId = document.getElementById("feedPurchSupplier").value || null;
+  if (!name||!qty||!cost) return;
+  const existing = S.feedItems.find(f=>f.name===name);
+  if (existing) { const newStock=existing.stockKg+qty; const newValue=existing.stockKg*existing.avgCost+cost; S.feedItems=S.feedItems.map(f=>f.name===name?{...f,stockKg:newStock,avgCost:newValue/newStock}:f); }
+  else S.feedItems = [...S.feedItems, { id:uid(), name, category, stockKg:qty, avgCost:cost/qty }];
+  save(KEYS.feedItems, S.feedItems);
+  S.feedPurchases = [{ id:uid(), date, itemName:name, qty, cost, supplierId }, ...S.feedPurchases];
+  save(KEYS.feedPurchases, S.feedPurchases);
+  render();
+}
+function delFeedItem(id) { S.feedItems=S.feedItems.filter(f=>f.id!==id); save(KEYS.feedItems,S.feedItems); render(); }
+function logFeedUsage() {
+  const date=document.getElementById("useDate").value, itemId=document.getElementById("useItem").value, qty=Number(document.getElementById("useQty").value);
+  const item = S.feedItems.find(f=>f.id===itemId);
+  if (!date||!item||!qty) return;
+  const cost = qty*item.avgCost;
+  S.feedUsage = [{ id:uid(), date, itemName:item.name, qty, cost }, ...S.feedUsage];
+  S.feedItems = S.feedItems.map(f=>f.id===itemId?{...f,stockKg:Math.max(f.stockKg-qty,0)}:f);
+  save(KEYS.feedUsage,S.feedUsage); save(KEYS.feedItems,S.feedItems); render();
+}
+function delFeedUsage(id) { S.feedUsage=S.feedUsage.filter(u=>u.id!==id); save(KEYS.feedUsage,S.feedUsage); render(); }
+
+// ================= MEDICAL =================
+function eventTotal(e) { return e.vetFee + e.medicines.reduce((s,m)=>s+m.qty*m.unitCost,0); }
+function renderMedical() {
+  const T = L();
+  const pending = window._pendingMeds || [];
+  const tags = [...new Set(S.medical.map(m=>m.animalTag))];
+  return `
+    <div class="card">
+      <h3 class="section">${T.logMedicalEvent}</h3>
+      <div class="field"><label>${T.animalTag}</label><input id="medTag" list="animalTags" placeholder="AE-014">
+        <datalist id="animalTags">${S.animals.map(a=>`<option value="${esc(a.tag)}">`).join("")}</datalist></div>
+      <div class="grid2">
+        <div class="field"><label>${T.date}</label><input type="date" id="medDate"></div>
+        <div class="field"><label>${T.outcome}</label><select id="medOutcome"><option>${T.recovered}</option><option>${T.ongoing}</option><option>${T.deceased}</option></select></div>
+      </div>
+      <div class="field"><label>${T.diagnosis}</label><input id="medDiagnosis" placeholder="${T.diagnosisPlaceholder}"></div>
+      <div class="muted" style="margin-bottom:6px;">${T.medicinesUsed}</div>
+      <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+        <input id="medName" placeholder="${T.medicineName}"><input id="medQty" type="number" placeholder="${T.qty}"><input id="medCost" type="number" placeholder="${T.unitCost}">
+      </div>
+      <button class="btn ghost" onclick="addMedLine()">${T.addMedicineLine}</button>
+      ${pending.length ? `<div class="muted" style="margin:10px 0;">${pending.map(m=>`${esc(m.name)} ×${m.qty} @ ${m.unitCost}`).join("<br>")}</div>` : ""}
+      <div class="field"><label>${T.vetFee}</label><input type="number" id="medVetFee"></div>
+      <button class="btn" onclick="saveMedEvent()">${T.saveMedicalEvent}</button>
+    </div>
+    <div class="card">
+      <h3 class="section">${T.historyByAnimal}</h3>
+      ${tags.length===0 ? `<div class="empty">${T.noMedicalYet}</div>` : tags.map(tag=>{
+        const events = S.medical.filter(m=>m.animalTag===tag);
+        const lifetime = events.reduce((s,e)=>s+eventTotal(e),0);
+        return `<div style="margin-bottom:20px;"><div style="display:flex;justify-content:space-between;margin-bottom:6px;"><div style="font-size:13px;font-weight:700;">${esc(tag)}</div><div style="font-size:12.5px;font-weight:700;color:var(--red);">${T.lifetime(currency(lifetime))}</div></div>
+          ${events.map(e=>`<div class="row"><div><div style="font-size:12.5px;">${e.date} — ${esc(e.diagnosis)}</div><div style="font-size:11px;color:var(--text-muted);">${e.medicines.map(m=>esc(m.name)).join(", ")||T.noMedicinesLogged} · ${currency(eventTotal(e))} · ${esc(e.outcome)}</div></div><button class="del" onclick="delMedEvent('${e.id}')">${T.delete}</button></div>`).join("")}</div>`;
+      }).join("")}
+    </div>
+  `;
+}
+function addMedLine() {
+  const name=document.getElementById("medName").value, qty=Number(document.getElementById("medQty").value), cost=Number(document.getElementById("medCost").value);
+  if (!name||!qty||!cost) return;
+  window._pendingMeds = [...(window._pendingMeds||[]), { name, qty, unitCost:cost }]; render();
+}
+function saveMedEvent() {
+  const animalTag=document.getElementById("medTag").value, date=document.getElementById("medDate").value;
+  const diagnosis=document.getElementById("medDiagnosis").value, outcome=document.getElementById("medOutcome").value;
+  const vetFee=Number(document.getElementById("medVetFee").value)||0;
+  if (!animalTag||!date||!diagnosis) return;
+  S.medical = [{ id:uid(), animalTag, date, diagnosis, medicines:window._pendingMeds||[], vetFee, outcome }, ...S.medical];
+  save(KEYS.medical,S.medical); window._pendingMeds=[]; render();
+}
+function delMedEvent(id) { S.medical=S.medical.filter(m=>m.id!==id); save(KEYS.medical,S.medical); render(); }
+
+// ================= ANIMALS =================
+function renderAnimals() {
+  const T = L();
+  const testsByTag = {}; S.tests.forEach(t=>{ (testsByTag[t.tag]=testsByTag[t.tag]||[]).push(t); });
+  Object.values(testsByTag).forEach(arr=>arr.sort((a,b)=>a.date>b.date?1:-1));
+  const statusOptionsHtml = STATUS_LIST.map(s=>`<option value="${s}">${STATUS_LABEL[lang()][s]}</option>`).join("");
+  return `
+    <div class="card">
+      <h3 class="section">${T.addAnimalTitle}</h3>
+      <div class="grid2">
+        <div class="field"><label>${T.tagId}</label><input id="animalTag" placeholder="AE-014"></div>
+        <div class="field"><label>${T.species}</label><select id="animalSpecies"><option value="Cow">${SPECIES_LABEL[lang()].Cow}</option><option value="Buffalo">${SPECIES_LABEL[lang()].Buffalo}</option></select></div>
+      </div>
+      <div class="grid2">
+        <div class="field"><label>${T.breed}</label><input id="animalBreed"></div>
+        <div class="field"><label>${T.status}</label><select id="animalStatus">${statusOptionsHtml}</select></div>
+      </div>
+      <button class="btn" onclick="addAnimal()">${T.addAnimal}</button>
+    </div>
+    <div class="card">
+      <h3 class="section">${T.herdTitle(S.animals.length)}</h3>
+      ${S.animals.length===0 ? `<div class="empty">${T.noAnimalsYet}</div>` : S.animals.map(a=>`<div class="row"><div><div style="font-size:13px;font-weight:700;">${esc(a.tag)} <span style="font-weight:400;color:var(--text-muted);">· ${SPECIES_LABEL[lang()][a.species]||esc(a.species)} · ${esc(a.breed)}</span></div>
+        <select style="margin-top:4px;font-size:11.5px;padding:4px 8px;border:1px solid var(--hairline);border-radius:6px;" onchange="updateAnimalStatus('${a.id}',this.value)">
+          ${STATUS_LIST.map(s=>`<option value="${s}" ${a.status===s?"selected":""}>${STATUS_LABEL[lang()][s]}</option>`).join("")}
+        </select></div><button class="del" onclick="delAnimal('${a.id}')">${T.delete}</button></div>`).join("")}
+    </div>
+    <div class="card">
+      <h3 class="section">${T.individualTestTitle}</h3>
+      <div class="field"><label>${T.animalTag}</label><input id="testTag" list="animalTagsForTest" placeholder="AE-014">
+        <datalist id="animalTagsForTest">${S.animals.map(a=>`<option value="${esc(a.tag)}">`).join("")}</datalist></div>
+      <div class="grid2">
+        <div class="field"><label>${T.testDate}</label><input type="date" id="testDate"></div>
+        <div class="field"><label>${T.totalLitresDay}</label><input type="number" id="testLitres"></div>
+      </div>
+      <button class="btn" onclick="addAnimalTest()">${T.saveTest}</button>
+    </div>
+    <div class="card">
+      <h3 class="section">${T.testHistoryTitle(S.tests.length)}</h3>
+      ${Object.keys(testsByTag).length===0 ? `<div class="empty">${T.noTestsYet}</div>` : Object.entries(testsByTag).map(([tag,arr])=>`<div style="margin-bottom:14px;"><div style="font-size:12.5px;font-weight:700;margin-bottom:4px;">${esc(tag)}</div>
+        ${arr.map(t=>`<div class="row"><div style="font-size:12px;">${t.date}</div><div style="font-size:12px;color:var(--text-muted);">${t.litres} ${T.litres}</div><button class="del" onclick="delAnimalTest('${t.id}')">${T.delete}</button></div>`).join("")}</div>`).join("")}
+    </div>
+  `;
+}
+function addAnimal() {
+  const tag=document.getElementById("animalTag").value, species=document.getElementById("animalSpecies").value;
+  const breed=document.getElementById("animalBreed").value, status=document.getElementById("animalStatus").value;
+  if (!tag) return;
+  S.animals=[...S.animals,{id:uid(),tag,species,breed,status}]; save(KEYS.animals,S.animals); render();
+}
+function delAnimal(id) { S.animals=S.animals.filter(a=>a.id!==id); save(KEYS.animals,S.animals); render(); }
+function updateAnimalStatus(id,status) { S.animals=S.animals.map(a=>a.id===id?{...a,status}:a); save(KEYS.animals,S.animals); render(); }
+function addAnimalTest() {
+  const tag=document.getElementById("testTag").value, date=document.getElementById("testDate").value, litres=Number(document.getElementById("testLitres").value);
+  if (!tag||!date||!litres) return;
+  S.tests=[...S.tests,{id:uid(),tag,date,litres}]; save(KEYS.tests,S.tests); render();
+}
+function delAnimalTest(id) { S.tests=S.tests.filter(t=>t.id!==id); save(KEYS.tests,S.tests); render(); }
+
+// ================= ACCOUNTS (Receivables & Payables) =================
+function partyBalance(party) {
+  const paid = S.payments.filter(p => p.partyId === party.id).reduce((s,p) => s + p.amount, 0);
+  if (party.type === "buyer") {
+    const owed = S.ledger.filter(l => l.buyerId === party.id).reduce((s,l) => s + l.total, 0);
+    return owed - paid; // positive = they owe you
+  } else {
+    const owed = S.feedPurchases.filter(f => f.supplierId === party.id).reduce((s,f) => s + f.cost, 0);
+    return owed - paid; // positive = you owe them
+  }
+}
+function renderAccounts() {
+  const T = L();
+  const buyers = S.parties.filter(p => p.type === "buyer");
+  const suppliers = S.parties.filter(p => p.type === "supplier");
+  const allParties = S.parties;
+  const totalReceivable = buyers.reduce((s,p) => s + Math.max(partyBalance(p), 0), 0);
+  const totalPayable = suppliers.reduce((s,p) => s + Math.max(partyBalance(p), 0), 0);
+
+  const partyRow = (p) => {
+    const bal = partyBalance(p);
+    const label = bal === 0 ? T.settledUp : (p.type === "buyer" ? T.owesYou(currency(Math.abs(bal))) : T.youOwe(currency(Math.abs(bal))));
+    const color = bal === 0 ? "var(--text-muted)" : (p.type === "buyer" ? "var(--green)" : "var(--red)");
+    return `<div class="row"><div><div style="font-size:13px;font-weight:600;">${esc(p.name)}</div><div style="font-size:12px;color:${color};margin-top:2px;">${label}</div></div><button class="del" onclick="deleteParty('${p.id}')">${T.delete}</button></div>`;
+  };
+
+  return `
+    <div class="kpi-row" style="grid-template-columns:1fr 1fr;">
+      <div class="kpi-card"><div class="kpi-badge" style="background:var(--green-bg);color:var(--green);">💰</div><div class="kpi-value">${currency(totalReceivable)}</div><div class="kpi-label">${T.totalOwed}</div></div>
+      <div class="kpi-card"><div class="kpi-badge" style="background:var(--red-bg);color:var(--red);">📤</div><div class="kpi-value">${currency(totalPayable)}</div><div class="kpi-label">${T.totalYouOwe}</div></div>
+    </div>
+
+    <div class="card">
+      <h3 class="section">${T.addPartyTitle}</h3>
+      <div class="grid2">
+        <div class="field"><label>${T.partyName}</label><input id="partyName" placeholder="e.g. Ali Traders"></div>
+        <div class="field"><label>${T.partyType}</label><select id="partyType"><option value="buyer">${T.buyerType}</option><option value="supplier">${T.supplierType}</option></select></div>
+      </div>
+      <button class="btn" onclick="addParty()">${T.addPartyBtn}</button>
+    </div>
+
+    <div class="card">
+      <h3 class="section">${T.buyersTitle}</h3>
+      ${buyers.length===0 ? `<div class="empty">${T.noParties}</div>` : buyers.map(partyRow).join("")}
+    </div>
+    <div class="card">
+      <h3 class="section">${T.suppliersTitle}</h3>
+      ${suppliers.length===0 ? `<div class="empty">${T.noParties}</div>` : suppliers.map(partyRow).join("")}
+    </div>
+
+    <div class="card">
+      <h3 class="section">${T.recordPayment}</h3>
+      <div class="field"><label>${T.selectParty}</label><select id="paymentParty">
+        <option value="">—</option>
+        ${allParties.map(p=>`<option value="${p.id}">${esc(p.name)} (${p.type==='buyer'?T.receivedFromBuyer:T.paidToSupplier})</option>`).join("")}
+      </select></div>
+      <div class="grid2">
+        <div class="field"><label>${T.paymentDate}</label><input type="date" id="paymentDate"></div>
+        <div class="field"><label>${T.paymentAmount}</label><input type="number" id="paymentAmount"></div>
+      </div>
+      <button class="btn" onclick="recordPayment()">${T.savePayment}</button>
+    </div>
+    <div class="card">
+      <h3 class="section">${T.paymentLog}</h3>
+      ${S.payments.length===0 ? `<div class="empty">${T.noPaymentsYet}</div>` : S.payments.slice(0,60).map(pay => {
+        const p = S.parties.find(x=>x.id===pay.partyId);
+        return `<div class="row"><div><div style="font-size:13px;">${pay.date} · ${p?esc(p.name):"—"}</div><div style="font-size:11.5px;color:var(--text-muted);">${currency(pay.amount)}</div></div><button class="del" onclick="delPayment('${pay.id}')">${T.delete}</button></div>`;
+      }).join("")}
+    </div>
+  `;
+}
+function addParty() {
+  const name = document.getElementById("partyName").value.trim();
+  const type = document.getElementById("partyType").value;
+  if (!name) return;
+  S.parties = [...S.parties, { id: uid(), name, type }];
+  save(KEYS.parties, S.parties);
+  render();
+}
+function deleteParty(id) {
+  if (!confirm(L().confirmDeleteParty)) return;
+  S.parties = S.parties.filter(p => p.id !== id);
+  save(KEYS.parties, S.parties);
+  render();
+}
+function recordPayment() {
+  const partyId = document.getElementById("paymentParty").value;
+  const date = document.getElementById("paymentDate").value;
+  const amount = Number(document.getElementById("paymentAmount").value);
+  if (!partyId || !date || !amount) return;
+  S.payments = [{ id: uid(), partyId, date, amount }, ...S.payments];
+  save(KEYS.payments, S.payments);
+  render();
+}
+function delPayment(id) {
+  S.payments = S.payments.filter(p => p.id !== id);
+  save(KEYS.payments, S.payments);
+  render();
+}
+
+// ================= PRINTABLE REPORT =================
+function renderReport() {
+  const T = L();
+  const farm = FARMS.find(f => f.id === currentFarmId);
+  const from = window._reportFrom || daysAgoStr(30);
+  const to = window._reportTo || daysAgoStr(0);
+  const inRange = (d) => d >= from && d <= to;
+
+  const ledgerR = S.ledger.filter(l => inRange(l.date));
+  const feedR = S.feedUsage.filter(u => inRange(u.date));
+  const medR = S.medical.filter(e => inRange(e.date));
+  const medCost = e => e.vetFee + e.medicines.reduce((s,m)=>s+m.qty*m.unitCost,0);
+
+  const milkIncome = ledgerR.reduce((s,l)=>s+l.total,0);
+  const bandiIncome = ledgerR.reduce((s,l)=>s+(l.bandiAmount||0),0);
+  const marketIncome = ledgerR.reduce((s,l)=>s+(l.excessAmount||0),0);
+  const feedCost = feedR.reduce((s,u)=>s+u.cost,0);
+  const medCostTotal = medR.reduce((s,e)=>s+medCost(e),0);
+  const net = milkIncome - feedCost - medCostTotal;
+
+  const totalReceivable = S.parties.filter(p=>p.type==="buyer").reduce((s,p)=>s+Math.max(partyBalance(p),0),0);
+  const totalPayable = S.parties.filter(p=>p.type==="supplier").reduce((s,p)=>s+Math.max(partyBalance(p),0),0);
+
+  const statusCount = (st) => S.animals.filter(a=>a.status===st).length;
+
+  return `
+    <div class="grid2" style="margin-bottom:16px;">
+      <div class="field"><label>${T.reportFrom}</label><input type="date" value="${from}" onchange="window._reportFrom=this.value;render();"></div>
+      <div class="field"><label>${T.reportTo}</label><input type="date" value="${to}" onchange="window._reportTo=this.value;render();"></div>
+    </div>
+    <div id="printableReport" class="card">
+      <div style="text-align:center;margin-bottom:20px;">
+        <div style="font-size:20px;font-weight:800;color:var(--sidebar);">🌾 FarmWise</div>
+        <div style="font-size:15px;font-weight:700;margin-top:4px;">${T.reportFarmLabel}: ${farm ? esc(farm.name) : ""}</div>
+        <div class="muted" style="margin-top:2px;">${T.reportPeriod}: ${from} — ${to} · ${T.reportGenerated} ${daysAgoStr(0)}</div>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr><td style="padding:8px 0;border-bottom:1px solid var(--hairline);">${T.reportMilkIncome}</td><td style="padding:8px 0;border-bottom:1px solid var(--hairline);text-align:right;font-weight:700;">${currency(milkIncome)}</td></tr>
+        <tr><td style="padding:6px 0 6px 16px;color:var(--text-muted);font-size:12px;">${T.reportFixedRate}</td><td style="padding:6px 0;text-align:right;color:var(--text-muted);font-size:12px;">${currency(bandiIncome)}</td></tr>
+        <tr><td style="padding:0 0 8px 16px;color:var(--text-muted);font-size:12px;border-bottom:1px solid var(--hairline);">${T.reportOpenMarket}</td><td style="padding:0 0 8px;text-align:right;color:var(--text-muted);font-size:12px;border-bottom:1px solid var(--hairline);">${currency(marketIncome)}</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid var(--hairline);">${T.reportFeedCost}</td><td style="padding:8px 0;border-bottom:1px solid var(--hairline);text-align:right;color:var(--red);">- ${currency(feedCost)}</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid var(--hairline);">${T.reportMedicalCost}</td><td style="padding:8px 0;border-bottom:1px solid var(--hairline);text-align:right;color:var(--red);">- ${currency(medCostTotal)}</td></tr>
+        <tr><td style="padding:10px 0;font-weight:800;">${T.reportNetProfit}</td><td style="padding:10px 0;text-align:right;font-weight:800;color:var(--sidebar);">${currency(net)}</td></tr>
+      </table>
+      <div class="divider"></div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr><td style="padding:6px 0;">${T.reportReceivables}</td><td style="padding:6px 0;text-align:right;color:var(--green);font-weight:700;">${currency(totalReceivable)}</td></tr>
+        <tr><td style="padding:6px 0;">${T.reportPayables}</td><td style="padding:6px 0;text-align:right;color:var(--red);font-weight:700;">${currency(totalPayable)}</td></tr>
+      </table>
+      <div class="divider"></div>
+      <h3 class="section">${T.reportHerd}</h3>
+      <table style="width:100%;border-collapse:collapse;font-size:13px;">
+        <tr><td style="padding:5px 0;">${T.reportTotalAnimals}</td><td style="padding:5px 0;text-align:right;font-weight:700;">${S.animals.length}</td></tr>
+        <tr><td style="padding:5px 0;">${T.reportLactating}</td><td style="padding:5px 0;text-align:right;">${statusCount("Lactating")}</td></tr>
+        <tr><td style="padding:5px 0;">${T.reportDry}</td><td style="padding:5px 0;text-align:right;">${statusCount("Dry")}</td></tr>
+        <tr><td style="padding:5px 0;">${T.reportPregnant}</td><td style="padding:5px 0;text-align:right;">${statusCount("Pregnant")}</td></tr>
+        <tr><td style="padding:5px 0;">${T.reportSick}</td><td style="padding:5px 0;text-align:right;">${statusCount("Sick")}</td></tr>
+      </table>
+      <div class="muted" style="text-align:center;margin-top:20px;">${T.reportFooter}</div>
+    </div>
+  `;
+}
+
+render();
+</script>
+</body>
+</html>
